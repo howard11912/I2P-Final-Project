@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}外送大師 — 開始遊戲{% endblock %}
+
+{% block body %}
+<div class="start-screen">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-logo">🏍️</div>
+    <h1 class="hero-title">外送大師</h1>
+    <p class="hero-sub">60 秒極速外送挑戰</p>
+  </div>
+
+  <!-- Form card -->
+  <div class="card form-card">
+    <h2>準備出發</h2>
+    <form method="POST" action="/init" id="start-form">
+      <div class="field">
+        <label for="player_name">外送員名稱</label>
+        <input type="text" id="player_name" name="player_name"
+               placeholder="輸入你的名字" maxlength="12" required>
+      </div>
+      <div class="field">
+        <label for="location">送餐城市 / 地點</label>
+        <input type="text" id="location" name="location"
+               value="國立清華大學, 新竹市東區, 台灣"
+               placeholder="例：台北市大安區、高雄市" required>
+      </div>
+      <button type="submit" class="btn-primary" id="start-btn">
+        🚀 開始遊戲
+      </button>
+    </form>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="card leaderboard-card">
+    <div class="lb-header">
+      <h2>🏆 歷史排行榜</h2>
+      <button class="btn-dedup" onclick="dedupScores()" title="合併同名玩家，保留最高分">
+        合併重複
+      </button>
+    </div>
+    <div id="lb-body">
+      {% if scores %}
+      <table class="lb-table">
+        <thead>
+          <tr><th>#</th><th>外送員</th><th>城市</th><th>金額</th><th>單數</th><th>日期</th><th></th></tr>
+        </thead>
+        <tbody id="lb-rows">
+          {% for s in scores %}
+          <tr class="{% if loop.index == 1 %}rank-gold{% elif loop.index == 2 %}rank-silver{% elif loop.index == 3 %}rank-bronze{% endif %}">
+            <td class="rank-num">{{ loop.index }}</td>
+            <td>{{ s.name }}</td>
+            <td class="city">{{ s.city }}</td>
+            <td class="money">${{ s.money }}</td>
+            <td>{{ s.deliveries }} 單</td>
+            <td class="date">{{ s.date }}</td>
+            <td>
+              <button class="btn-del"
+                      onclick="deleteScore('{{ s.name }}', {{ s.money }})"
+                      title="刪除這筆紀錄">🗑️</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="empty-lb" id="lb-empty">還沒有紀錄，成為第一名吧！</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('start-form').addEventListener('submit', () => {
+  const btn = document.getElementById('start-btn');
+  btn.textContent = '⏳ 載入中...';
+  btn.disabled = true;
+});
+
+// ── Leaderboard management ────────────────────────────────────────────
+const RANK_CLS = ['', 'rank-gold', 'rank-silver', 'rank-bronze'];
+
+function renderLb(scores) {
+  const body = document.getElementById('lb-body');
+  if (!scores.length) {
+    body.innerHTML = '<p class="empty-lb">還沒有紀錄，成為第一名吧！</p>';
+    return;
+  }
+  const rows = scores.map((s, i) => `
+    <tr class="${RANK_CLS[i + 1] || ''}">
+      <td class="rank-num">${i + 1}</td>
+      <td>${s.name}</td>
+      <td class="city">${s.city}</td>
+      <td class="money">$${s.money}</td>
+      <td>${s.deliveries} 單</td>
+      <td class="date">${s.date}</td>
+      <td><button class="btn-del" title="刪除"
+            onclick="deleteScore('${s.name.replace(/'/g,"\\'")}', ${s.money})">🗑️</button></td>
+    </tr>`).join('');
+  body.innerHTML = `<table class="lb-table">
+    <thead><tr><th>#</th><th>外送員</th><th>城市</th><th>金額</th><th>單數</th><th>日期</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+async function deleteScore(name, money) {
+  if (!confirm(`確定刪除「${name}」的 $${money} 紀錄？`)) return;
+  const res  = await fetch('/api/leaderboard/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, money }),
+  });
+  const data = await res.json();
+  if (data.ok) renderLb(data.scores);
+}
+
+async function dedupScores() {
+  if (!confirm('合併同名玩家，每人只保留最高分？')) return;
+  const res  = await fetch('/api/leaderboard/dedup', { method: 'POST' });
+  const data = await res.json();
+  if (data.ok) renderLb(data.scores);
+}
+</script>
+{% endblock %}

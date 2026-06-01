@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}外送大師 — 準備中{% endblock %}
+
+{% block body %}
+<div class="loading-screen">
+  <div class="loading-logo">🏍️</div>
+  <h1 class="loading-title">正在備餐中...</h1>
+  <div class="loading-bar-wrap">
+    <div class="loading-bar" id="loading-bar"></div>
+  </div>
+  <p class="loading-msg" id="loading-msg">初始化中...</p>
+  <p class="loading-hint">（搜尋附近商家並規劃路線，約需 15–20 秒）</p>
+
+  <div class="error-box" id="error-box" style="display:none">
+    <p id="error-msg"></p>
+    <a href="/" class="btn-secondary">← 返回重試</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let progress = 5;
+
+const bar = document.getElementById('loading-bar');
+const msgEl = document.getElementById('loading-msg');
+const errBox = document.getElementById('error-box');
+const errMsg = document.getElementById('error-msg');
+
+async function poll() {
+  try {
+    const res = await fetch('/api/loading_status');
+    const data = await res.json();
+
+    msgEl.textContent = data.msg || '準備中...';
+
+    if (data.status === 'ready') {
+      bar.style.width = '100%';
+      msgEl.textContent = '✅ 準備完成！';
+      setTimeout(() => { window.location.href = '/game'; }, 600);
+      return;
+    }
+
+    if (data.status === 'error') {
+      errMsg.textContent = '❌ ' + (data.error || '發生錯誤');
+      errBox.style.display = 'block';
+      return;
+    }
+
+    // Animate progress bar (fake fill that never hits 95% until ready)
+    progress = Math.min(92, progress + Math.random() * 8);
+    bar.style.width = progress + '%';
+
+    setTimeout(poll, 1200);
+  } catch {
+    setTimeout(poll, 2000);
+  }
+}
+
+poll();
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+{
+  "scores": [
+    {
+      "name": "G",
+      "money": 629,
+      "deliveries": 2,
+      "city": "台北市",
+      "date": "2026-06-01"
+    },
+    {
+      "name": "1",
+      "money": 372,
+      "deliveries": 3,
+      "city": "國立清華大學, 新竹市東區, 台灣",
+      "date": "2026-06-01"
+    },
+    {
+      "name": "FF",
+      "money": 347,
+      "deliveries": 1,
+      "city": "國立清華大學, 新竹市東區, 台灣",
+      "date": "2026-06-01"
+    },
+    {
+      "name": "AA",
+      "money": 257,
+      "deliveries": 2,
+      "city": "國立清華大學, 新竹市東區, 台灣",
+      "date": "2026-06-01"
+    },
+    {
+      "name": "A",
+      "money": 0,
+      "deliveries": 0,
+      "city": "國立清華大學, 新竹市東區, 台灣",
+      "date": "2026-06-01"
+    }
+  ]
+}

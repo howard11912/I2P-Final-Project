@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}外送大師 — 結算{% endblock %}
+
+{% block body %}
+<div class="result-screen">
+
+  <!-- Score hero -->
+  <div class="result-hero">
+    <div class="result-medal">
+      {% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% elif rank == 3 %}🥉{% else %}🏍️{% endif %}
+    </div>
+    <h1 class="result-name">{{ player_name }}</h1>
+    <div class="result-money">${{ money }}</div>
+    <p class="result-sub">{{ deliveries }} 單完成 ／ {{ city }}</p>
+    {% if rank %}
+    <div class="result-rank">第 {{ rank }} 名</div>
+    {% endif %}
+  </div>
+
+  <!-- Delivery log -->
+  {% if completed %}
+  <div class="card result-log">
+    <h2>本局紀錄</h2>
+    <table class="log-table">
+      <thead>
+        <tr><th>層級</th><th>商家</th><th>收入</th><th>準時</th></tr>
+      </thead>
+      <tbody>
+        {% for c in completed %}
+        <tr>
+          <td>
+            {% if c.tier == 'VIP' %}🔴{% elif c.tier == '急單' %}🟡{% else %}🟢{% endif %}
+            {{ c.tier }}
+          </td>
+          <td>{{ c.venue_name }}</td>
+          <td class="money">${{ c.earned }}</td>
+          <td>{% if c.got_bonus %}✅{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Leaderboard -->
+  <div class="card result-lb">
+    <h2>🏆 排行榜</h2>
+    <table class="lb-table">
+      <thead>
+        <tr><th>#</th><th>外送員</th><th>城市</th><th>金額</th><th>單數</th></tr>
+      </thead>
+      <tbody>
+        {% for s in scores %}
+        <tr class="
+          {% if loop.index == 1 %}rank-gold
+          {% elif loop.index == 2 %}rank-silver
+          {% elif loop.index == 3 %}rank-bronze
+          {% endif %}
+          {% if s.name == player_name and s.money == money %}highlight-row{% endif %}
+        ">
+          <td class="rank-num">{{ loop.index }}</td>
+          <td>{{ s.name }}</td>
+          <td class="city">{{ s.city }}</td>
+          <td class="money">${{ s.money }}</td>
+          <td>{{ s.deliveries }} 單</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="result-actions">
+    <a href="/" class="btn-primary">🔄 再玩一次</a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Animate money counter
+const target = {{ money }};
+const el = document.querySelector('.result-money');
+let cur = 0;
+const step = Math.max(1, Math.floor(target / 60));
+const iv = setInterval(() => {
+  cur = Math.min(target, cur + step);
+  el.textContent = '$' + cur;
+  if (cur >= target) clearInterval(iv);
+}, 20);
+</script>
+{% endblock %}
