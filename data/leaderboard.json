@@ -8,6 +8,13 @@
       "date": "2026-06-01"
     },
     {
+      "name": "GG",
+      "money": 376,
+      "deliveries": 3,
+      "city": "國立清華大學, 新竹市東區, 台灣",
+      "date": "2026-06-02"
+    },
+    {
       "name": "1",
       "money": 372,
       "deliveries": 3,
@@ -27,6 +34,13 @@
       "deliveries": 2,
       "city": "國立清華大學, 新竹市東區, 台灣",
       "date": "2026-06-01"
+    },
+    {
+      "name": "AAA",
+      "money": 88,
+      "deliveries": 1,
+      "city": "神秘地點",
+      "date": "2026-06-02"
     },
     {
       "name": "A",

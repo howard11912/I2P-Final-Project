@@ -75,7 +75,10 @@
         <span class="timer" id="timer">{{ game_duration }}</span>
         <span class="timer-unit">秒</span>
       </div>
-      <div style="width:80px"></div><!-- spacer to center timer -->
+      <div class="topbar-actions">
+        <button class="btn-top" id="demo-btn" onclick="toggleDemo()" title="暫停/恢復計時">⏸️ DEMO</button>
+        <button class="btn-top settle" onclick="settleGame()" title="立即結算本局並查看結果">🏁 結算</button>
+      </div>
     </div>
     <iframe id="map-frame" src="/map_view" frameborder="0"></iframe>
   </main>
@@ -102,7 +105,7 @@
 const GAME_DURATION = {{ game_duration }};
 let serverRemaining = GAME_DURATION;
 let phase = 'idle', activeOrder = null;
-let ended = false;
+let ended = false, demoMode = false;
 let bonusIv = null, bonusLeft = 0;
 
 // ── Toast ───────────────────────────────────────────────────────────
@@ -117,6 +120,12 @@ function showToast(msg, type = '') {
 const timerEl = document.getElementById('timer');
 function tickTimer() {
   if (ended) return;
+  if (demoMode) {                       // DEMO mode: clock frozen
+    timerEl.textContent = '∞';
+    timerEl.classList.remove('timer-urgent');
+    setTimeout(tickTimer, 1000);
+    return;
+  }
   serverRemaining = Math.max(0, serverRemaining - 1);
   timerEl.textContent = serverRemaining;
   if (serverRemaining <= 10) timerEl.classList.add('timer-urgent');
@@ -141,6 +150,37 @@ function goHome() {
   }
 }
 
+// ── Settle now: end the round immediately and record the score ───────
+function settleGame() {
+  if (confirm('立即結算本局並查看結果？目前分數會計入排行榜。')) endGame();
+}
+
+// ── DEMO mode: pause / resume the round clock ────────────────────────
+function syncDemo(on) {
+  demoMode = on;
+  const btn = document.getElementById('demo-btn');
+  if (!btn) return;
+  if (on) {
+    btn.classList.add('demo-on');
+    btn.textContent = '▶️ 繼續計時';
+  } else {
+    btn.classList.remove('demo-on');
+    btn.textContent = '⏸️ DEMO';
+    timerEl.textContent = serverRemaining;
+  }
+}
+
+async function toggleDemo() {
+  try {
+    const res  = await fetch('/api/toggle_demo', { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) return;
+    serverRemaining = data.remaining;
+    syncDemo(data.demo_mode);
+    showToast(data.demo_mode ? '🎮 DEMO 模式：計時已暫停' : '⏱️ 計時已恢復');
+  } catch {}
+}
+
 // ── State polling ───────────────────────────────────────────────────
 async function pollState() {
   if (ended) return;
@@ -150,6 +190,7 @@ async function pollState() {
     serverRemaining = data.remaining;
     phase           = data.phase;
     activeOrder     = data.active_order;
+    if (typeof data.demo_mode === 'boolean') syncDemo(data.demo_mode);
     document.getElementById('money').textContent      = '$' + data.money;
     document.getElementById('deliveries').textContent = data.deliveries + ' 單';
     if (data.phase === 'finished') { endGame(); return; }

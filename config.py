@@ -3,13 +3,13 @@ MAX_VISIBLE_ORDERS = 3      # orders shown at once
 ORDER_POOL_SIZE = 12        # pre-generate before game starts
 
 # In-game travel speed: osrm_minutes * factor = game_seconds
-SPEED_FACTOR = 1.0
+SPEED_FACTOR = 0.4
 MIN_TRAVEL_SECONDS = 3
 MAX_TRAVEL_SECONDS = 12
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org"
 OSRM_URL = "http://router.project-osrm.org"
-USER_AGENT = "DeliveryMaster-CS101/1.0 (howard60308@gmail.com)"
+USER_AGENT = "jjdavid91988@gmail.com"
 API_DELAY = 1.1             # Nominatim: >= 1 req/s
 
 DEBUG_LOCATION = "國立清華大學, 新竹市東區, 台灣"

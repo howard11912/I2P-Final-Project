@@ -70,6 +70,13 @@ def _get_order(g, order_id):
             return o
     return None
 
+# ── Helper: seconds left in the round (frozen while DEMO mode is on) ──
+def _remaining(g):
+    if g.get("demo_mode"):
+        return max(0, g.get("paused_remaining", config.GAME_DURATION))
+    elapsed = time.time() - g.get("start_time", time.time())
+    return max(0, config.GAME_DURATION - elapsed)
+
 # ── Background venue prefetch ─────────────────────────────────────────
 def _prefetch_venues(game_id, order_id, player_pos):
     """
@@ -219,10 +226,10 @@ def api_state():
     if not g:
         return jsonify({"error": "no game"})
 
-    elapsed   = time.time() - g.get("start_time", time.time())
-    remaining = max(0, config.GAME_DURATION - elapsed)
+    remaining = _remaining(g)
 
-    if remaining <= 0 and g.get("phase") != "finished":
+    # DEMO mode (untimed) never auto-finishes the round on the clock.
+    if remaining <= 0 and not g.get("demo_mode") and g.get("phase") != "finished":
         g["phase"] = "finished"
         set_game(g)
 
@@ -243,10 +250,32 @@ def api_state():
         "money":            g["money"],
         "deliveries":       len(g["completed"]),
         "remaining":        int(remaining),
+        "demo_mode":        bool(g.get("demo_mode")),
         "available_orders": available,
         "active_order":     active,
         "venue_options":    venue_options,
     })
+
+@app.route("/api/toggle_demo", methods=["POST"])
+def api_toggle_demo():
+    """Toggle DEMO mode — pause/resume the round clock without losing time."""
+    g = get_game()
+    if not g:
+        return jsonify({"ok": False})
+
+    if g.get("demo_mode"):
+        # Resume: rebase start_time so the clock continues from the freeze point.
+        rem = max(0, g.get("paused_remaining", config.GAME_DURATION))
+        g["start_time"] = time.time() - (config.GAME_DURATION - rem)
+        g["demo_mode"]  = False
+    else:
+        # Pause: freeze whatever time is left.
+        g["paused_remaining"] = _remaining(g)
+        g["demo_mode"]        = True
+
+    set_game(g)
+    return jsonify({"ok": True, "demo_mode": g["demo_mode"],
+                    "remaining": int(_remaining(g))})
 
 @app.route("/api/accept", methods=["POST"])
 def api_accept():

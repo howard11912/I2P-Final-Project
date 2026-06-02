@@ -284,6 +284,23 @@ a { color: var(--accent); text-decoration: none; }
 }
 .btn-home:hover { border-color: var(--accent2); color: var(--accent2); }
 
+.topbar-actions { display: flex; gap: .4rem; }
+.btn-top {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: .3rem .7rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: .82rem;
+  white-space: nowrap;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.btn-top:hover      { border-color: var(--accent2); color: var(--accent2); }
+.btn-top.settle     { border-color: var(--green); color: var(--green); }
+.btn-top.settle:hover { background: var(--green); color: #0f1117; }
+.btn-top.demo-on    { border-color: var(--accent); color: var(--accent); background: rgba(249,168,37,.12); }
+
 .timer-wrap { display: flex; align-items: baseline; gap: .3rem; }
 .timer {
   font-size: 2rem;

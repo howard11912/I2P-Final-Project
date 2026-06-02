@@ -34,23 +34,52 @@ _FIND_MAP = """
 """
 
 
-# ── Two-leg continuous animation ──────────────────────────────────────
-_TWO_LEG_TPL = """<script>
-(function() {
-  var LEG1 = __LEG1__;
-  var LEG2 = __LEG2__;
-  var DUR1 = Math.max(__DUR1__, 800);
-  var DUR2 = Math.max(__DUR2__, 800);
-  var tries = 0;
-  __FINDMAP__
+# ── Shared motorcycle animation engine ────────────────────────────────
+# makeMoto()   builds the 🏍️ divIcon marker.
+# animateLeg() drives one leg of the journey. It is hardened against two
+# failure modes that previously left the bike frozen at the start until a
+# safety timeout silently finished the task:
+#   1. Degenerate routes (0 or 1 geometry points). OSRM occasionally snaps
+#      start/end to the same node, so route[idx]/route[idx+1] could be
+#      undefined and throw inside the rAF step, killing the animation.
+#   2. requestAnimationFrame stalling (background tab, jank). A setInterval
+#      fallback re-computes position from elapsed time, so the marker keeps
+#      moving even when rAF is throttled. Both drivers are time-based and
+#      idempotent, and finish() snaps the marker onto the final point.
+_ANIM_FN = """
+  function makeMoto(map, startLatLng) {
+    var icon = L.divIcon({
+      html: '<span id="ms" style="font-size:24px;line-height:1;display:inline-block;' +
+            'will-change:transform;transform:translateZ(0)">🏍️</span>',
+      iconSize: [30,30], iconAnchor: [15,15], className: ''
+    });
+    return L.marker(startLatLng, {icon: icon, zIndexOffset: 9999}).addTo(map);
+  }
 
   function animateLeg(marker, route, durMs, spr, onDone) {
-    var done = false;
-    var safety = setTimeout(function() {
-      if (!done) { done = true; onDone(); }
-    }, durMs + 3000);
-    var t0 = performance.now();
-    (function step(now) {
+    var done = false, safety = null, timer = null, t0 = 0;
+
+    function finish() {
+      if (done) return;
+      done = true;
+      if (timer)  { clearInterval(timer); timer = null; }
+      if (safety) { clearTimeout(safety); safety = null; }
+      if (route && route.length) {
+        var last = route[route.length - 1];
+        marker.setLatLng([last[0], last[1]]);   // always end on the destination
+      }
+      onDone();
+    }
+
+    // Degenerate route: nothing to interpolate. Park the marker on the only
+    // point (if any) and complete after the intended duration so timing holds.
+    if (!route || route.length < 2) {
+      if (route && route.length === 1) marker.setLatLng(route[0]);
+      safety = setTimeout(finish, durMs);
+      return;
+    }
+
+    function render(now) {
       if (done) return;
       var prog = Math.min((now - t0) / durMs, 1);
       var pos  = prog * (route.length - 1);
@@ -66,18 +95,41 @@ _TWO_LEG_TPL = """<script>
         spr.el.style.transform =
           route[nx][1] >= route[idx][1] ? 'scaleX(-1) translateZ(0)' : 'translateZ(0)';
       }
-      if (prog >= 1) { clearTimeout(safety); done = true; onDone(); return; }
-      requestAnimationFrame(step);
-    })(performance.now());
+      if (prog >= 1) finish();
+    }
+
+    t0 = performance.now();
+    safety = setTimeout(finish, durMs + 3000);          // last-resort completion
+    timer  = setInterval(function() { render(performance.now()); }, 250);  // rAF-stall fallback
+    (function raf() {
+      if (done) return;
+      render(performance.now());
+      if (!done) requestAnimationFrame(raf);            // smooth path when foregrounded
+    })();
   }
+"""
+
+
+# ── Two-leg continuous animation ──────────────────────────────────────
+_TWO_LEG_TPL = """<script>
+(function() {
+  var LEG1 = __LEG1__;
+  var LEG2 = __LEG2__;
+  var DUR1 = Math.max(__DUR1__, 800);
+  var DUR2 = Math.max(__DUR2__, 800);
+  var tries = 0;
+  __FINDMAP__
+  __ANIMFN__
 
   function runJourney(map) {
-    var icon = L.divIcon({
-      html: '<span id="ms" style="font-size:24px;line-height:1;display:inline-block;' +
-            'will-change:transform;transform:translateZ(0)">🏍️</span>',
-      iconSize: [30,30], iconAnchor: [15,15], className: ''
-    });
-    var marker = L.marker(LEG1[0], {icon: icon, zIndexOffset: 9999}).addTo(map);
+    var start = (LEG1 && LEG1.length) ? LEG1[0]
+              : (LEG2 && LEG2.length) ? LEG2[0] : null;
+    if (!start) {   // no geometry at all — keep the game flowing
+      try { window.parent.postMessage({type: 'pickup_done'},   '*'); } catch(e) {}
+      try { window.parent.postMessage({type: 'delivery_done'}, '*'); } catch(e) {}
+      return;
+    }
+    var marker = makeMoto(map, start);
     var spr    = {el: null};
 
     animateLeg(marker, LEG1, DUR1, spr, function() {
@@ -104,7 +156,8 @@ def _two_leg_script(leg1, leg2, dur1_s, dur2_s):
             .replace('__LEG2__', json.dumps(leg2))
             .replace('__DUR1__', str(int(dur1_s * 1000)))
             .replace('__DUR2__', str(int(dur2_s * 1000)))
-            .replace('__FINDMAP__', _FIND_MAP))
+            .replace('__FINDMAP__', _FIND_MAP)
+            .replace('__ANIMFN__', _ANIM_FN))
 
 
 # ── Single-leg fallback animation ─────────────────────────────────────
@@ -115,45 +168,21 @@ _ONE_LEG_TPL = """<script>
   var PHASE = '__PHASE__';
   var tries = 0;
   __FINDMAP__
+  __ANIMFN__
 
   function tryStart() {
     var map = findMap();
     if (!map) { if (++tries < 60) setTimeout(tryStart, 100); return; }
-    var icon = L.divIcon({
-      html: '<span id="ms" style="font-size:24px;line-height:1;display:inline-block;' +
-            'will-change:transform;transform:translateZ(0)">🏍️</span>',
-      iconSize: [30,30], iconAnchor: [15,15], className: ''
-    });
-    var marker = L.marker(ROUTE[0], {icon: icon, zIndexOffset: 9999}).addTo(map);
+    var start = (ROUTE && ROUTE.length) ? ROUTE[0] : null;
+    if (!start) {   // no geometry — report completion so the phase advances
+      try { window.parent.postMessage({type: PHASE+'_done'}, '*'); } catch(e) {}
+      return;
+    }
+    var marker = makeMoto(map, start);
     var spr    = {el: null};
-    var done   = false;
-    var safety = setTimeout(function() {
-      if (!done) { done = true; window.parent.postMessage({type: PHASE+'_done'}, '*'); }
-    }, DUR + 3000);
-    var t0 = performance.now();
-    (function step(now) {
-      if (done) return;
-      var prog = Math.min((now - t0) / DUR, 1);
-      var pos  = prog * (ROUTE.length - 1);
-      var idx  = Math.min(Math.floor(pos), ROUTE.length - 2);
-      var f    = pos - idx;
-      marker.setLatLng([
-        ROUTE[idx][0] + (ROUTE[idx+1][0] - ROUTE[idx][0]) * f,
-        ROUTE[idx][1] + (ROUTE[idx+1][1] - ROUTE[idx][1]) * f
-      ]);
-      if (!spr.el) { var el = marker.getElement(); if (el) spr.el = el.querySelector('#ms'); }
-      if (spr.el) {
-        var nx = Math.min(idx+1, ROUTE.length-1);
-        spr.el.style.transform =
-          ROUTE[nx][1] >= ROUTE[idx][1] ? 'scaleX(-1) translateZ(0)' : 'translateZ(0)';
-      }
-      if (prog >= 1) {
-        clearTimeout(safety); done = true;
-        try { window.parent.postMessage({type: PHASE+'_done'}, '*'); } catch(e) {}
-        return;
-      }
-      requestAnimationFrame(step);
-    })(performance.now());
+    animateLeg(marker, ROUTE, DUR, spr, function() {
+      try { window.parent.postMessage({type: PHASE+'_done'}, '*'); } catch(e) {}
+    });
   }
   setTimeout(tryStart, 400);
 })();
@@ -165,7 +194,8 @@ def _one_leg_script(route, dur_s, phase):
             .replace('__ROUTE__', json.dumps(route))
             .replace('__DUR__',   str(int(dur_s * 1000)))
             .replace('__PHASE__', phase)
-            .replace('__FINDMAP__', _FIND_MAP))
+            .replace('__FINDMAP__', _FIND_MAP)
+            .replace('__ANIMFN__', _ANIM_FN))
 
 
 # ── Marker click → postMessage to parent ─────────────────────────────
