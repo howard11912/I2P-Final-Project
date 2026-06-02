@@ -35,11 +35,6 @@ _FIND_MAP = """
 
 
 # ── Two-leg continuous animation ──────────────────────────────────────
-# Uses __PLACEHOLDER__ instead of Python .format() to avoid double-brace escaping.
-# Key improvements:
-#   done flag    — prevents double-trigger on rAF edge cases
-#   safetyTimer  — force-fires onDone if rAF stalls (e.g. tab backgrounded)
-#   cached spr   — sprite element cached after first lookup
 _TWO_LEG_TPL = """<script>
 (function() {
   var LEG1 = __LEG1__;
@@ -174,7 +169,6 @@ def _one_leg_script(route, dur_s, phase):
 
 
 # ── Marker click → postMessage to parent ─────────────────────────────
-# data: list of {lat, lon, <id_field>: value}
 _CLICK_TPL = """<script>
 (function() {
   var DATA  = __DATA__;
@@ -190,7 +184,7 @@ _CLICK_TPL = """<script>
         var d = DATA[i];
         if (Math.abs(ll.lat - d.lat) < 0.0003 && Math.abs(ll.lng - d.lon) < 0.0003) {
           (function(dd) {
-            var _last = 0;   // debounce: ignore duplicate fires within 400 ms
+            var _last = 0;
             layer.on('click', function() {
               var now = Date.now();
               if (now - _last < 400) return;
@@ -213,6 +207,31 @@ def _click_script(data, msg_type, id_field):
             .replace('__MTYPE__', msg_type)
             .replace('__IKEY__',  id_field)
             .replace('__FINDMAP__', _FIND_MAP))
+
+
+# ── Numbered venue marker (DivIcon with rank badge) ───────────────────
+def _venue_div_icon(rank, emoji):
+    """
+    Returns a folium DivIcon showing:
+      - a coloured circle with the rank number  (#1, #2 …)
+      - the venue type emoji below it
+    This matches the numbering in the right-side panel exactly.
+    """
+    # Colour cycles through a palette so each rank is visually distinct
+    colours = ["#e74c3c", "#2980b9", "#27ae60", "#8e44ad", "#d35400", "#16a085"]
+    bg = colours[(rank - 1) % len(colours)]
+    html = (
+        f'<div style="text-align:center;line-height:1;">'
+        f'<div style="background:{bg};color:#fff;border-radius:50%;'
+        f'width:30px;height:30px;display:flex;align-items:center;'
+        f'justify-content:center;font-weight:bold;font-size:14px;'
+        f'border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,0.45);'
+        f'margin:0 auto;">{rank}</div>'
+        f'<div style="font-size:14px;margin-top:1px;'
+        f'text-shadow:0 0 3px #fff,0 0 3px #fff;">{emoji}</div>'
+        f'</div>'
+    )
+    return folium.DivIcon(html=html, icon_size=(34, 46), icon_anchor=(17, 8))
 
 
 # ── Main map builder ──────────────────────────────────────────────────
@@ -271,6 +290,7 @@ def build_map(game_data):
         tier   = config.ORDER_TIERS[active["tier"]]
         venues = active.get("venues") or []
 
+        # 客戶位置
         folium.Marker(
             location=[active["customer_lat"], active["customer_lon"]],
             tooltip=f"📍 {active.get('customer_desire','顧客')}",
@@ -283,17 +303,18 @@ def build_map(game_data):
             icon=folium.Icon(color="orange", icon="user", prefix="fa"),
         ).add_to(m)
 
+        # ── 餐廳 markers：改用帶編號的 DivIcon ──────────────────────
         for v in venues:
             rank = v.get("rank", "?")
             folium.Marker(
                 location=[v["lat"], v["lon"]],
-                tooltip=f"#{rank} {vtype['emoji']} {v['name']}",
+                tooltip=f"#{rank} {vtype['emoji']} {v['name']}（點地圖可選）",
                 popup=folium.Popup(
                     f"<b>#{rank} {vtype['emoji']} {v['name']}</b><br>"
                     f"點右側 #<b>{rank}</b> 「選這家」接單",
                     max_width=200,
                 ),
-                icon=folium.Icon(color=vtype["folium_color"], icon="cutlery", prefix="fa"),
+                icon=_venue_div_icon(rank, vtype["emoji"]),
             ).add_to(m)
 
         all_lats = ([active["customer_lat"], origin["lat"], player_pos[0]]
