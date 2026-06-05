@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>外送大師 — Demo Guide</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #f78166;
+    --accent3: #3fb950;
+    --accent4: #d2a8ff;
+    --accent5: #ffa657;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --gold: #f1c40f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  /* ── Layout ── */
+  .sidebar {
+    position: fixed; top: 0; left: 0;
+    width: 260px; height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 1.5rem 1rem;
+    z-index: 100;
+  }
+  .sidebar h2 { font-size: .8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .8rem; }
+  .sidebar a {
+    display: block; padding: .4rem .6rem; border-radius: 6px;
+    text-decoration: none; color: var(--text-dim); font-size: .88rem;
+    transition: all .15s;
+  }
+  .sidebar a:hover { background: rgba(88,166,255,.1); color: var(--accent); }
+  .sidebar a.active { background: rgba(88,166,255,.15); color: var(--accent); font-weight: 600; }
+  .sidebar .group { margin-bottom: 1.4rem; }
+  .main {
+    margin-left: 260px;
+    padding: 2.5rem 3rem 4rem;
+    max-width: 960px;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2.5rem 3rem;
+    margin-bottom: 2.5rem;
+    text-align: center;
+  }
+  .hero-emoji { font-size: 4rem; }
+  .hero h1 { font-size: 2.2rem; margin: .5rem 0; background: linear-gradient(90deg,#58a6ff,#d2a8ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero p { color: var(--text-dim); font-size: 1.05rem; }
+  .badge-row { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+  .badge { background: rgba(88,166,255,.15); color: var(--accent); border: 1px solid rgba(88,166,255,.3); border-radius: 20px; padding: .25rem .8rem; font-size: .82rem; font-weight: 600; }
+  .badge.g { background: rgba(63,185,80,.12); color: var(--accent3); border-color: rgba(63,185,80,.3); }
+  .badge.p { background: rgba(210,168,255,.12); color: var(--accent4); border-color: rgba(210,168,255,.3); }
+  .badge.o { background: rgba(255,166,87,.12); color: var(--accent5); border-color: rgba(255,166,87,.3); }
+
+  /* ── Sections ── */
+  section { margin-bottom: 3rem; scroll-margin-top: 1.5rem; }
+  h2.sec { font-size: 1.4rem; border-bottom: 1px solid var(--border); padding-bottom: .5rem; margin-bottom: 1.4rem; }
+  h3.sub { font-size: 1.05rem; color: var(--accent4); margin: 1.4rem 0 .6rem; }
+  h4.q { font-size: .95rem; color: var(--accent5); margin: 1.2rem 0 .4rem; }
+
+  /* ── Demo steps ── */
+  .step-grid { display: grid; gap: 1rem; }
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.4rem;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: .8rem;
+    align-items: start;
+  }
+  .step-card:hover { border-color: var(--accent); }
+  .step-num {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent4));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1rem; color: #fff;
+    flex-shrink: 0;
+  }
+  .step-title { font-weight: 700; margin-bottom: .25rem; }
+  .step-do { font-size: .9rem; color: var(--text-dim); }
+  .step-do strong { color: var(--text); }
+  .step-tag {
+    display: inline-block; font-size: .72rem; font-weight: 700;
+    padding: .1rem .5rem; border-radius: 4px; margin-left: .4rem;
+    vertical-align: middle;
+  }
+  .tag-api { background: rgba(88,166,255,.2); color: var(--accent); }
+  .tag-map { background: rgba(63,185,80,.2); color: var(--accent3); }
+  .tag-game { background: rgba(255,166,87,.2); color: var(--accent5); }
+
+  /* ── Tech table ── */
+  .tech-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  .tech-table th, .tech-table td { padding: .6rem .9rem; border: 1px solid var(--border); text-align: left; }
+  .tech-table th { background: rgba(88,166,255,.08); color: var(--accent); font-weight: 600; }
+  .tech-table tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* ── Architecture flow ── */
+  .flow { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: 1rem 0; }
+  .flow-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: .5rem 1rem; font-size: .88rem; font-weight: 600;
+  }
+  .flow-box.blue { border-color: var(--accent); color: var(--accent); }
+  .flow-box.green { border-color: var(--accent3); color: var(--accent3); }
+  .flow-box.purple { border-color: var(--accent4); color: var(--accent4); }
+  .flow-box.orange { border-color: var(--accent5); color: var(--accent5); }
+  .flow-arrow { color: var(--text-dim); font-size: 1.2rem; }
+
+  /* ── Code blocks ── */
+  pre {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    font-size: .83rem;
+    line-height: 1.6;
+    margin: .6rem 0;
+  }
+  code { font-family: "SF Mono", Consolas, monospace; color: #e6edf3; }
+  .c-kw { color: #ff7b72; }
+  .c-fn { color: #d2a8ff; }
+  .c-str { color: #a5d6ff; }
+  .c-cmt { color: #8b949e; font-style: italic; }
+  .c-num { color: #79c0ff; }
+
+  /* ── QA cards ── */
+  .qa-card {
+    background: var(--surface);
+    border-left: 3px solid var(--accent5);
+    border-radius: 0 8px 8px 0;
+    border-top: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .qa-q {
+    background: rgba(255,166,87,.08);
+    padding: .7rem 1.1rem;
+    font-weight: 700;
+    font-size: .93rem;
+    cursor: pointer;
+    user-select: none;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .qa-q:hover { background: rgba(255,166,87,.14); }
+  .qa-q::after { content: '▾'; font-size: .8rem; color: var(--text-dim); transition: transform .2s; }
+  .qa-card.open .qa-q::after { transform: rotate(180deg); }
+  .qa-a {
+    padding: .9rem 1.1rem;
+    font-size: .9rem;
+    display: none;
+    border-top: 1px solid var(--border);
+  }
+  .qa-card.open .qa-a { display: block; }
+  .qa-a p { margin-bottom: .5rem; }
+  .qa-a code { background: rgba(88,166,255,.1); padding: .1rem .35rem; border-radius: 4px; font-size: .85rem; }
+  .qa-a ul { margin: .4rem 0 .4rem 1.2rem; }
+  .qa-a li { margin-bottom: .3rem; }
+
+  /* ── Highlight box ── */
+  .callout {
+    border-left: 3px solid var(--accent3);
+    background: rgba(63,185,80,.07);
+    border-radius: 0 8px 8px 0;
+    padding: .75rem 1rem;
+    margin: .8rem 0;
+    font-size: .9rem;
+  }
+  .callout.warn { border-color: var(--accent5); background: rgba(255,166,87,.07); }
+  .callout.info { border-color: var(--accent); background: rgba(88,166,255,.07); }
+
+  /* ── Checklist ── */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: .3rem 0; padding-left: 1.4rem; position: relative; font-size: .92rem; }
+  .checklist li::before { content: '☐'; position: absolute; left: 0; color: var(--text-dim); }
+  .checklist li.done::before { content: '✅'; }
+
+  /* ── File tree ── */
+  .filetree { font-family: "SF Mono", Consolas, monospace; font-size: .84rem; line-height: 1.8; }
+  .filetree .dir { color: var(--accent4); font-weight: 700; }
+  .filetree .file { color: var(--text); }
+  .filetree .comment { color: var(--text-dim); font-style: italic; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="group">
+    <h2>總覽</h2>
+    <a href="#overview">專案簡介</a>
+    <a href="#techstack">技術架構</a>
+    <a href="#structure">目錄結構</a>
+  </div>
+  <div class="group">
+    <h2>Demo 流程</h2>
+    <a href="#demo">展示步驟</a>
+    <a href="#demo-tips">展示技巧</a>
+  </div>
+  <div class="group">
+    <h2>實作細節</h2>
+    <a href="#geocoding">地理編碼 (Geocoding)</a>
+    <a href="#routing">路線計算 (OSRM)</a>
+    <a href="#game-engine">遊戲引擎</a>
+    <a href="#map-builder">地圖渲染</a>
+    <a href="#animation">機車動畫</a>
+    <a href="#state-mgmt">狀態管理</a>
+    <a href="#threading">多執行緒</a>
+    <a href="#leaderboard">排行榜</a>
+  </div>
+  <div class="group">
+    <h2>助教問答 QA</h2>
+    <a href="#qa-api">API 相關</a>
+    <a href="#qa-flask">Flask 相關</a>
+    <a href="#qa-map">地圖相關</a>
+    <a href="#qa-game">遊戲邏輯</a>
+    <a href="#qa-advanced">進階設計</a>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-emoji">🏍️</div>
+  <h1>外送大師 Demo Guide</h1>
+  <p>Delivery Master — 以真實地圖 API 打造的 60 秒外送挑戰遊戲</p>
+  <div class="badge-row">
+    <span class="badge">Flask</span>
+    <span class="badge g">Folium / Leaflet</span>
+    <span class="badge p">Nominatim</span>
+    <span class="badge o">OSRM</span>
+    <span class="badge">Python 3</span>
+  </div>
+</div>
+
+<!-- ── 1. 專案簡介 ── -->
+<section id="overview">
+  <h2 class="sec">專案簡介</h2>
+  <p>
+    <strong>外送大師</strong>是一款以 Python + Flask 實作的位置感知 Web 遊戲。
+    玩家在 60 秒內扮演外送員，接受顧客訂單、搜尋附近真實商家、計算實際步行路線，
+    並在地圖上觀看機車動畫完成外送。
+    整個流程串接兩個免費無金鑰的真實地圖 API。
+  </p>
+  <div class="callout" style="margin-top:1rem">
+    <strong>核心亮點：</strong>全程使用真實地理資料（OpenStreetMap）；
+    地圖動畫、地點搜尋、路線計算全部源自正式 API，不使用任何假資料或硬編碼座標。
+  </div>
+
+  <h3 class="sub">四段 Pipeline</h3>
+  <div class="flow">
+    <div class="flow-box blue">① 地理編碼<br><small>Nominatim geocode</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box green">② 地點搜尋<br><small>Nominatim search</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box purple">③ 路線計算<br><small>OSRM routing</small></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box orange">④ 地圖渲染<br><small>Folium + JS 動畫</small></div>
+  </div>
+</section>
+
+<!-- ── 2. 技術架構 ── -->
+<section id="techstack">
+  <h2 class="sec">技術架構</h2>
+  <table class="tech-table">
+    <thead><tr><th>功能</th><th>技術選擇</th><th>理由</th></tr></thead>
+    <tbody>
+      <tr><td>Web Server</td><td>Flask (Python)</td><td>輕量、易整合 Python 函式庫</td></tr>
+      <tr><td>地理編碼</td><td>Nominatim (OpenStreetMap)</td><td>免費、無金鑰、支援中文地名</td></tr>
+      <tr><td>路線計算</td><td>OSRM Demo Server</td><td>免費步行路線 + GeoJSON 幾何</td></tr>
+      <tr><td>地圖渲染</td><td>Folium → Leaflet.js</td><td>Python 端生成 HTML，前端零依賴</td></tr>
+      <tr><td>地圖動畫</td><td>純 JavaScript (requestAnimationFrame)</td><td>無需額外函式庫，嵌入 iframe</td></tr>
+      <tr><td>狀態管理</td><td>Flask session + Python dict (_games)</td><td>每局獨立，多玩家安全</td></tr>
+      <tr><td>排行榜持久化</td><td>JSON 檔案 (data/leaderboard.json)</td><td>無需資料庫，簡單直接</td></tr>
+      <tr><td>非同步 API</td><td>Python threading</td><td>Loading 畫面不阻塞、背景預取</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── 3. 目錄結構 ── -->
+<section id="structure">
+  <h2 class="sec">目錄結構</h2>
+  <pre><code><span class="c-cmt">FP/</span>
+├── <span class="c-fn">app.py</span>              <span class="c-cmt"># Flask 路由、遊戲狀態機、API 端點</span>
+├── <span class="c-fn">config.py</span>           <span class="c-cmt"># 所有遊戲參數（時長、速度、API 設定）</span>
+├── utils/
+│   ├── <span class="c-fn">geocoding.py</span>    <span class="c-cmt"># Nominatim 封裝：限速 + geocode + search_venues</span>
+│   ├── <span class="c-fn">routing.py</span>      <span class="c-cmt"># OSRM 封裝：座標轉換 + 時間縮放</span>
+│   ├── <span class="c-fn">game_engine.py</span>  <span class="c-cmt"># 訂單生成、Haversine 距離、隨機偏移</span>
+│   └── <span class="c-fn">map_builder.py</span>  <span class="c-cmt"># Folium 地圖建構 + JS 動畫注入</span>
+├── templates/
+│   ├── <span class="c-fn">base.html</span>       <span class="c-cmt"># Jinja2 基礎版型</span>
+│   ├── <span class="c-fn">start.html</span>      <span class="c-cmt"># 首頁（表單 + 排行榜）</span>
+│   ├── <span class="c-fn">loading.html</span>    <span class="c-cmt"># 等待畫面（輪詢 /api/loading_status）</span>
+│   ├── <span class="c-fn">game.html</span>       <span class="c-cmt"># 主遊戲（三欄布局 + 全部 JS 邏輯）</span>
+│   └── <span class="c-fn">result.html</span>     <span class="c-cmt"># 結算頁（動畫金額計數器 + 排行榜）</span>
+├── static/css/style.css
+└── data/leaderboard.json   <span class="c-cmt"># 持久化排行榜</span></code></pre>
+</section>
+
+<!-- ── 4. Demo 展示步驟 ── -->
+<section id="demo">
+  <h2 class="sec">Demo 展示步驟</h2>
+  <div class="callout warn">
+    Demo 前先在 <code>config.py</code> 確認 <code>DEMO_SEED = 42</code>（固定亂數，確保每次訂單相同）。
+    開始後立即按 <strong>⏸️ DEMO</strong> 暫停計時，方便慢慢講解。
+  </div>
+
+  <div class="step-grid">
+
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title">首頁展示 <span class="step-tag tag-game">start.html</span></div>
+        <div class="step-do">
+          開啟 <code>http://localhost:5000</code>，指出：<br>
+          ・ <strong>玩家名稱</strong> 輸入欄<br>
+          ・ <strong>城市欄位</strong>預設為「國立清華大學」（可改任意地名）<br>
+          ・ <strong>排行榜</strong>已有歷史分數，說明持久化機制（JSON 檔）<br>
+          ・ 排行榜可刪除單筆或「合併重複」（AJAX 不刷頁）
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">Loading 畫面 <span class="step-tag tag-api">Nominatim API</span></div>
+        <div class="step-do">
+          輸入名稱後按「開始遊戲」。<br>
+          ・ 說明 <strong>後台 Thread</strong> 在呼叫 Nominatim geocode<br>
+          ・ Loading 頁面每 1.5 秒輪詢 <code>/api/loading_status</code>，顯示即時進度<br>
+          ・ 完成後自動跳轉，不需手動重整
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">遊戲主畫面 — 閒置狀態 <span class="step-tag tag-map">Folium 地圖</span></div>
+        <div class="step-do">
+          進入遊戲後立即按 <strong>⏸️ DEMO 暫停計時</strong>，再說明：<br>
+          ・ <strong>三欄布局</strong>：左側玩家資訊、中央地圖、右側訂單列表<br>
+          ・ 地圖由 Folium 生成，呈現在 <code>&lt;iframe&gt;</code> 內<br>
+          ・ 3 張訂單卡片，每張有：層級（普通/急單/VIP）、品類、獎勵金<br>
+          ・ 點擊<strong>地圖上的顧客標記</strong>，右側對應卡片會高亮（postMessage 跨 iframe 通訊）
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <div>
+        <div class="step-title">接單 → 選餐廳 <span class="step-tag tag-api">Nominatim 地點搜尋</span></div>
+        <div class="step-do">
+          選一張訂單按「接單」：<br>
+          ・ 按鈕變成「搜尋中…」，後台呼叫 Nominatim <code>search_venues</code><br>
+          ・ 地圖重新渲染：出現 <strong>編號圓圈標記</strong>（#1、#2…）代表候選餐廳<br>
+          ・ 右側面板顯示餐廳清單，依距玩家距離排序<br>
+          ・ 點地圖餐廳標記 → 右側對應卡高亮（同樣用 postMessage）
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <div>
+        <div class="step-title">選定餐廳 → 計算路線 <span class="step-tag tag-api">OSRM 兩段路線</span></div>
+        <div class="step-do">
+          按「選這家」：<br>
+          ・ 後台呼叫 OSRM 兩次：<strong>玩家→餐廳（取餐）、餐廳→顧客（外送）</strong><br>
+          ・ 地圖出現<strong>橘色路線</strong>（取餐段）和<strong>藍色路線</strong>（外送段）<br>
+          ・ 左側顯示「準時獎勵」倒數計時器（根據實際路線時間計算）
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">6</div>
+      <div>
+        <div class="step-title">機車動畫 <span class="step-tag tag-map">Leaflet.js + rAF</span></div>
+        <div class="step-do">
+          動畫自動執行（恢復計時後）：<br>
+          ・ 🏍️ 沿橘色路線移動到餐廳（取餐段）<br>
+          ・ 抵達餐廳 → postMessage <code>pickup_done</code> → 左側步驟 ① 變綠<br>
+          ・ 🏍️ 繼續沿藍色路線移動到顧客（外送段）<br>
+          ・ 抵達顧客 → postMessage <code>delivery_done</code> → Toast 顯示獲得金額<br>
+          ・ 說明機車方向：向右移動時 emoji <code>scaleX(-1)</code> 鏡像翻轉
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">7</div>
+      <div>
+        <div class="step-title">結算畫面 <span class="step-tag tag-game">排行榜寫入</span></div>
+        <div class="step-do">
+          按「🏁 結算」或等計時到 0：<br>
+          ・ <strong>金額計數器動畫</strong>（setInterval 從 0 累加）<br>
+          ・ 本局每筆外送紀錄（商家名、金額、是否準時）<br>
+          ・ 排行榜即時顯示，自己的名次高亮<br>
+          ・ 按「再玩一次」回首頁
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── 5. Demo 技巧 ── -->
+<section id="demo-tips">
+  <h2 class="sec">展示技巧 &amp; 注意事項</h2>
+  <ul class="checklist">
+    <li>事先啟動 <code>python app.py</code>，確認 Flask 在 port 5000 正常運作</li>
+    <li><code>DEMO_SEED = 42</code> 確保每次訂單位置相同，方便講解</li>
+    <li>進遊戲後<strong>立即按 ⏸️ DEMO</strong> 暫停計時，才有時間解說地圖與訂單卡</li>
+    <li>用 Chrome DevTools Network 分頁展示 API 呼叫（可看到 <code>/api/state</code> 每 1.8 秒輪詢）</li>
+    <li>直接用城市名（如「台北市信義區」「高雄市前金區」）展示不同地點都有效</li>
+    <li>準時獎勵倒數到 0 後仍可完成外送，讓助教看到「沒拿到 bonus」的 Toast</li>
+    <li>展示「略過」功能：舊訂單被替換、地圖重新渲染</li>
+    <li>結算後展示排行榜的「合併重複」AJAX 功能（不刷頁更新表格）</li>
+  </ul>
+</section>
+
+<!-- ── 6. 地理編碼 ── -->
+<section id="geocoding">
+  <h2 class="sec">實作細節：地理編碼 (Nominatim)</h2>
+  <p>所有 Nominatim 呼叫封裝在 <code>utils/geocoding.py</code> 的 <code>Geocoder</code> 類別。</p>
+
+  <h3 class="sub">限速機制（Rate Limiting）</h3>
+  <p>Nominatim 規定最多每秒 1 次請求，違規會被封 IP。</p>
+  <pre><code><span class="c-cmt"># 全 process 共享的限速鎖（geocoding.py:13-35）</span>
+_RATE_LOCK = threading.Lock()
+_LAST_CALL = 0.0
+
+<span class="c-kw">def</span> <span class="c-fn">_search</span>(self, params):
+    <span class="c-kw">global</span> _LAST_CALL
+    <span class="c-kw">with</span> _RATE_LOCK:              <span class="c-cmt"># 串行化：同一時間只有一個執行緒能送請求</span>
+        wait = config.API_DELAY - (time.time() - _LAST_CALL)
+        <span class="c-kw">if</span> wait > <span class="c-num">0</span>:
+            time.sleep(wait)       <span class="c-cmt"># 等夠 1.1 秒後才送</span>
+        _LAST_CALL = time.time()
+        resp = requests.get(...)   <span class="c-cmt"># Lock 內送出，確保間隔</span></code></pre>
+  <div class="callout info">
+    鎖必須是<strong>全 process 層級</strong>（module-level variable），因為每個 Flask request 都會 <code>new Geocoder()</code>，若鎖是 instance 屬性，背景 thread 和主 thread 各有一把，互不等待，仍會超速。
+  </div>
+
+  <h3 class="sub">地點搜尋（search_venues）</h3>
+  <p>使用 Nominatim 的 <strong>結構化參數</strong>（<code>amenity=</code>、<code>shop=</code>）而非純文字搜尋，精確度更高。</p>
+  <pre><code><span class="c-cmt"># 搜尋玩家附近 2km 範圍內的餐廳（geocoding.py:54-92）</span>
+r     = config.VENUE_SEARCH_RADIUS      <span class="c-cmt"># 2000 公尺</span>
+delta = r / <span class="c-num">111_000</span>                    <span class="c-cmt"># 1 度緯度 ≈ 111km，換算成度</span>
+viewbox = f<span class="c-str">"{lon-delta},{lat+delta},{lon+delta},{lat-delta}"</span>
+
+params = {<span class="c-str">"format"</span>: <span class="c-str">"json"</span>, <span class="c-str">"bounded"</span>: <span class="c-num">1</span>, <span class="c-str">"viewbox"</span>: viewbox, ...}
+<span class="c-kw">if</span> amenity:
+    params[<span class="c-str">"amenity"</span>] = amenity      <span class="c-cmt"># e.g. "restaurant", "cafe"</span>
+<span class="c-kw">elif</span> query:
+    params[<span class="c-str">"q"</span>] = query              <span class="c-cmt"># fallback: 文字搜尋 "7-Eleven"</span></code></pre>
+
+  <h3 class="sub">Fallback 鏈</h3>
+  <p>便利商店因 OSM 資料較少，設計了 fallback 鏈避免回傳空結果：</p>
+  <pre><code><span class="c-cmt"># config.py 中的定義</span>
+<span class="c-str">"convenience"</span>: {
+    <span class="c-str">"query"</span>: <span class="c-str">"7-Eleven"</span>,
+    <span class="c-str">"fallback_queries"</span>: [<span class="c-str">"全家"</span>, <span class="c-str">"萊爾富"</span>, <span class="c-str">"supermarket"</span>],
+    ...
+}
+
+<span class="c-cmt"># app.py 中的接單邏輯（api_accept）</span>
+<span class="c-kw">for</span> fq <span class="c-kw">in</span> vinfo.get(<span class="c-str">"fallback_queries"</span>, []):
+    <span class="c-kw">if</span> venues: <span class="c-kw">break</span>       <span class="c-cmt"># 有結果就停</span>
+    venues = geocoder.search_venues(..., query=fq, ...)</code></pre>
+</section>
+
+<!-- ── 7. OSRM ── -->
+<section id="routing">
+  <h2 class="sec">實作細節：路線計算 (OSRM)</h2>
+  <p>封裝在 <code>utils/routing.py</code> 的 <code>Router</code> 類別。</p>
+
+  <h3 class="sub">座標順序（lon, lat）</h3>
+  <pre><code><span class="c-cmt"># routing.py:16-17 — OSRM 要求「經度, 緯度」（反直覺！）</span>
+coords = f<span class="c-str">"{start[1]},{start[0]};{end[1]},{end[0]}"</span>
+<span class="c-cmt">#              ^^^lon          ^^^lat</span>
+
+<span class="c-cmt"># GeoJSON 回傳的也是 [lon, lat]，需轉為 Folium 用的 [lat, lon]</span>
+geometry = [[c[<span class="c-num">1</span>], c[<span class="c-num">0</span>]] <span class="c-kw">for</span> c <span class="c-kw">in</span> route[<span class="c-str">"geometry"</span>][<span class="c-str">"coordinates"</span>]]</code></pre>
+
+  <h3 class="sub">遊戲時間縮放</h3>
+  <p>真實步行時間換算成遊戲內秒數，讓 60 秒內可完成多次外送：</p>
+  <pre><code><span class="c-cmt"># routing.py:36-41 + config.py 參數</span>
+SPEED_FACTOR      = <span class="c-num">0.4</span>   <span class="c-cmt"># osrm 分鐘 × 0.4 = 遊戲秒數</span>
+MIN_TRAVEL_SECONDS = <span class="c-num">3</span>    <span class="c-cmt"># 最短動畫 3 秒</span>
+MAX_TRAVEL_SECONDS = <span class="c-num">12</span>   <span class="c-cmt"># 最長動畫 12 秒（避免太久等）</span>
+
+<span class="c-kw">def</span> <span class="c-fn">game_seconds</span>(self, osrm_duration_s):
+    minutes = osrm_duration_s / <span class="c-num">60</span>
+    raw = minutes * config.SPEED_FACTOR
+    <span class="c-kw">return</span> int(max(MIN_TRAVEL_SECONDS, min(MAX_TRAVEL_SECONDS, raw)))</code></pre>
+
+  <h3 class="sub">準時獎勵時間計算</h3>
+  <pre><code><span class="c-cmt"># api_select_venue（app.py:360）</span>
+t1 = router.game_seconds(leg1[<span class="c-str">"duration_s"</span>])  <span class="c-cmt"># 取餐動畫秒數</span>
+t2 = router.game_seconds(leg2[<span class="c-str">"duration_s"</span>])  <span class="c-cmt"># 外送動畫秒數</span>
+time_factor = config.ORDER_TIERS[order[<span class="c-str">"tier"</span>]][<span class="c-str">"time_factor"</span>]
+<span class="c-cmt"># 急單 time_factor=1.1（幾乎沒有緩衝），普通=1.6（寬鬆）</span>
+time_limit = int((t1 + t2) * time_factor)</code></pre>
+</section>
+
+<!-- ── 8. 遊戲引擎 ── -->
+<section id="game-engine">
+  <h2 class="sec">實作細節：遊戲引擎 (game_engine.py)</h2>
+
+  <h3 class="sub">Haversine 距離公式</h3>
+  <pre><code><span class="c-kw">def</span> <span class="c-fn">haversine</span>(lat1, lon1, lat2, lon2):
+    <span class="c-str">"""地球球面直線距離（公尺）"""</span>
+    R = <span class="c-num">6_371_000</span>                      <span class="c-cmt"># 地球半徑（公尺）</span>
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = math.radians(lat2 - lat1)
+    dl = math.radians(lon2 - lon1)
+    a = math.sin(dp/<span class="c-num">2</span>)**<span class="c-num">2</span> + math.cos(p1)*math.cos(p2)*math.sin(dl/<span class="c-num">2</span>)**<span class="c-num">2</span>
+    <span class="c-kw">return</span> <span class="c-num">2</span> * R * math.asin(math.sqrt(a))</code></pre>
+
+  <h3 class="sub">隨機顧客座標生成</h3>
+  <pre><code><span class="c-kw">def</span> <span class="c-fn">_random_offset</span>(lat, lon, min_m=<span class="c-num">400</span>, max_m=<span class="c-num">1600</span>):
+    angle = random.uniform(<span class="c-num">0</span>, <span class="c-num">2</span> * math.pi)      <span class="c-cmt"># 隨機方向</span>
+    dist  = random.uniform(min_m, max_m)            <span class="c-cmt"># 400m~1600m 距離</span>
+    dlat  = (dist * math.cos(angle)) / <span class="c-num">111_000</span>
+    dlon  = (dist * math.sin(angle)) / (<span class="c-num">111_000</span> * math.cos(math.radians(lat)))
+    <span class="c-cmt"># 注意：dlon 要除以 cos(lat)，因為越靠近極點，1度經度對應的距離越短</span>
+    <span class="c-kw">return</span> lat + dlat, lon + dlon</code></pre>
+
+  <h3 class="sub">訂單層級系統</h3>
+  <pre><code><span class="c-cmt"># config.py 中定義（加權隨機）</span>
+ORDER_TIERS = {
+    <span class="c-str">"普通"</span>: {<span class="c-str">"reward_mult"</span>: <span class="c-num">1.0</span>, <span class="c-str">"time_factor"</span>: <span class="c-num">1.6</span>, <span class="c-str">"weight"</span>: <span class="c-num">60</span>},  <span class="c-cmt"># 60% 機率</span>
+    <span class="c-str">"急單"</span>: {<span class="c-str">"reward_mult"</span>: <span class="c-num">1.5</span>, <span class="c-str">"time_factor"</span>: <span class="c-num">1.1</span>, <span class="c-str">"weight"</span>: <span class="c-num">30</span>},  <span class="c-cmt"># 30%</span>
+    <span class="c-str">"VIP"</span>:  {<span class="c-str">"reward_mult"</span>: <span class="c-num">2.5</span>, <span class="c-str">"time_factor"</span>: <span class="c-num">1.3</span>, <span class="c-str">"weight"</span>: <span class="c-num">10</span>},  <span class="c-cmt"># 10%</span>
+}
+
+<span class="c-kw">def</span> <span class="c-fn">_pick_tier</span>():
+    tiers   = list(config.ORDER_TIERS.keys())
+    weights = [config.ORDER_TIERS[t][<span class="c-str">"weight"</span>] <span class="c-kw">for</span> t <span class="c-kw">in</span> tiers]
+    <span class="c-kw">return</span> random.choices(tiers, weights=weights)[<span class="c-num">0</span>]  <span class="c-cmt"># 加權抽籤</span></code></pre>
+
+  <h3 class="sub">獎勵計算公式</h3>
+  <pre><code><span class="c-cmt"># 基礎獎勵 + 距離加成，再乘以層級倍率</span>
+dist_m = haversine(player_pos[<span class="c-num">0</span>], player_pos[<span class="c-num">1</span>], customer_lat, customer_lon)
+base   = random.randint(*vtype[<span class="c-str">"base_reward_range"</span>]) + int(dist_m / <span class="c-num">100</span>) * <span class="c-num">5</span>
+reward = int(base * tier[<span class="c-str">"reward_mult"</span>])    <span class="c-cmt"># VIP 最多 2.5x</span>
+bonus  = int(reward * <span class="c-num">0.30</span>)               <span class="c-cmt"># 準時獎勵 = 基本獎金 30%</span></code></pre>
+</section>
+
+<!-- ── 9. 地圖渲染 ── -->
+<section id="map-builder">
+  <h2 class="sec">實作細節：地圖渲染 (map_builder.py)</h2>
+
+  <h3 class="sub">Folium 生成 HTML 並注入 JS</h3>
+  <pre><code><span class="c-cmt"># build_map() 的核心流程</span>
+m = folium.Map(location=[lat, lon], zoom_start=<span class="c-num">15</span>, tiles=<span class="c-str">"CartoDB dark_matter"</span>)
+
+<span class="c-cmt"># 依遊戲 phase 加入不同標記...</span>
+folium.Marker(location=[lat, lon], icon=folium.Icon(color=<span class="c-str">"green"</span>)).add_to(m)
+
+<span class="c-cmt"># 取得完整 HTML 字串</span>
+html = m.get_root().render()
+
+<span class="c-cmt"># 注入自訂 JavaScript（動畫、點擊事件）</span>
+<span class="c-kw">return</span> _inject(html, animation_script)</code></pre>
+
+  <h3 class="sub">phase-based 地圖狀態</h3>
+  <p><code>build_map()</code> 根據遊戲 phase 渲染不同內容：</p>
+  <table class="tech-table">
+    <thead><tr><th>Phase</th><th>地圖內容</th><th>注入腳本</th></tr></thead>
+    <tbody>
+      <tr><td><code>idle</code></td><td>玩家位置 + 顧客標記（N個）</td><td>marker_click → postMessage</td></tr>
+      <tr><td><code>selecting_venue</code></td><td>顧客 + 編號餐廳標記</td><td>venue_click → postMessage</td></tr>
+      <tr><td><code>pickup</code></td><td>路線（橘+藍） + 機車動畫（兩段）</td><td>_two_leg_script</td></tr>
+      <tr><td><code>delivery</code></td><td>路線（藍）+ 機車動畫（單段）</td><td>_one_leg_script</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">路線座標簡化</h3>
+  <pre><code><span class="c-kw">def</span> <span class="c-fn">_simplify</span>(route, max_pts=<span class="c-num">60</span>):
+    <span class="c-str">"""OSRM 可能回傳數百個點，只取 60 個均勻採樣，減少 HTML 體積。"""</span>
+    n = len(route)
+    <span class="c-kw">if</span> n <= max_pts: <span class="c-kw">return</span> route
+    step = (n - <span class="c-num">1</span>) / (max_pts - <span class="c-num">1</span>)
+    <span class="c-kw">return</span> [route[round(i * step)] <span class="c-kw">for</span> i <span class="c-kw">in</span> range(max_pts - <span class="c-num">1</span>)] + [route[-<span class="c-num">1</span>]]</code></pre>
+
+  <h3 class="sub">編號餐廳標記（DivIcon）</h3>
+  <pre><code><span class="c-kw">def</span> <span class="c-fn">_venue_div_icon</span>(rank, emoji):
+    <span class="c-str">"""自訂 HTML 標記：彩色圓圈 #N + emoji，與右側列表編號一致。"""</span>
+    colours = [<span class="c-str">"#e74c3c"</span>, <span class="c-str">"#2980b9"</span>, <span class="c-str">"#27ae60"</span>, ...]
+    bg = colours[(rank - <span class="c-num">1</span>) % len(colours)]
+    html = f<span class="c-str">'&lt;div style="..."&gt;{rank}&lt;/div&gt;{emoji}'</span>
+    <span class="c-kw">return</span> folium.DivIcon(html=html, icon_size=(<span class="c-num">34</span>, <span class="c-num">46</span>), icon_anchor=(<span class="c-num">17</span>, <span class="c-num">8</span>))</code></pre>
+</section>
+
+<!-- ── 10. 機車動畫 ── -->
+<section id="animation">
+  <h2 class="sec">實作細節：機車動畫 (JavaScript)</h2>
+
+  <h3 class="sub">動畫原理（時間線性插值）</h3>
+  <pre><code><span class="c-cmt">// 核心：依時間進度在路線點之間線性插值</span>
+<span class="c-kw">function</span> <span class="c-fn">render</span>(now) {
+  <span class="c-kw">var</span> prog = Math.min((now - t0) / durMs, <span class="c-num">1</span>);   <span class="c-cmt">// 0.0 → 1.0</span>
+  <span class="c-kw">var</span> pos  = prog * (route.length - <span class="c-num">1</span>);           <span class="c-cmt">// 在路線陣列中的位置</span>
+  <span class="c-kw">var</span> idx  = Math.floor(pos);
+  <span class="c-kw">var</span> f    = pos - idx;                            <span class="c-cmt">// 小數部分（插值因子）</span>
+  marker.setLatLng([
+    route[idx][<span class="c-num">0</span>] + (route[idx+<span class="c-num">1</span>][<span class="c-num">0</span>] - route[idx][<span class="c-num">0</span>]) * f,
+    route[idx][<span class="c-num">1</span>] + (route[idx+<span class="c-num">1</span>][<span class="c-num">1</span>] - route[idx][<span class="c-num">1</span>]) * f,
+  ]);
+}</code></pre>
+
+  <h3 class="sub">雙驅動防凍結設計</h3>
+  <pre><code><span class="c-cmt">// requestAnimationFrame：前景分頁流暢動畫</span>
+(<span class="c-kw">function</span> <span class="c-fn">raf</span>() {
+  <span class="c-kw">if</span> (done) <span class="c-kw">return</span>;
+  render(performance.now());
+  <span class="c-kw">if</span> (!done) requestAnimationFrame(raf);
+})();
+
+<span class="c-cmt">// setInterval 備份：分頁切到背景時 rAF 被節流，250ms 補丁持續推進動畫</span>
+timer = setInterval(<span class="c-kw">function</span>() { render(performance.now()); }, <span class="c-num">250</span>);
+
+<span class="c-cmt">// 安全逾時：durMs + 3000ms 後強制完成，避免永久卡住</span>
+safety = setTimeout(finish, durMs + <span class="c-num">3000</span>);</code></pre>
+
+  <h3 class="sub">iframe → 父頁面通訊（postMessage）</h3>
+  <pre><code><span class="c-cmt">// iframe 內（地圖）→ 父頁面（game.html）</span>
+window.parent.postMessage({type: <span class="c-str">'pickup_done'</span>}, <span class="c-str">'*'</span>);    <span class="c-cmt">// 到達餐廳</span>
+window.parent.postMessage({type: <span class="c-str">'delivery_done'</span>}, <span class="c-str">'*'</span>); <span class="c-cmt">// 送達顧客</span>
+window.parent.postMessage({type: <span class="c-str">'marker_click'</span>, id: orderId}, <span class="c-str">'*'</span>);
+
+<span class="c-cmt">// 父頁面監聽（game.html）</span>
+window.addEventListener(<span class="c-str">'message'</span>, <span class="c-kw">async</span> (e) => {
+  <span class="c-kw">if</span> (e.data.type === <span class="c-str">'pickup_done'</span>) {
+    <span class="c-kw">await</span> fetch(<span class="c-str">'/api/pickup'</span>, {method: <span class="c-str">'POST'</span>});  <span class="c-cmt">// 更新 server phase</span>
+    pollState();
+  }
+});</code></pre>
+
+  <h3 class="sub">機車方向翻轉</h3>
+  <pre><code><span class="c-cmt">// 比較當前點和下一個點的經度，決定面向左右</span>
+spr.el.style.transform =
+  route[nx][<span class="c-num">1</span>] >= route[idx][<span class="c-num">1</span>]
+    ? <span class="c-str">'scaleX(-1) translateZ(0)'</span>   <span class="c-cmt">// 向東（右）走：翻轉</span>
+    : <span class="c-str">'translateZ(0)'</span>;             <span class="c-cmt">// 向西（左）走：正常</span></code></pre>
+</section>
+
+<!-- ── 11. 狀態管理 ── -->
+<section id="state-mgmt">
+  <h2 class="sec">實作細節：遊戲狀態管理</h2>
+
+  <h3 class="sub">Server-side Game Store</h3>
+  <pre><code><span class="c-cmt"># app.py — 以 game_id 為 key 的全域 dict</span>
+_games: dict = {}
+_games_lock = threading.Lock()   <span class="c-cmt"># 多執行緒安全寫入</span>
+
+<span class="c-kw">def</span> <span class="c-fn">get_game</span>():
+    gid = session.get(<span class="c-str">"game_id"</span>)    <span class="c-cmt"># 從 cookie 中讀取 game_id</span>
+    <span class="c-kw">return</span> _games.get(gid) <span class="c-kw">if</span> gid <span class="c-kw">else</span> <span class="c-kw">None</span></code></pre>
+
+  <h3 class="sub">Phase 狀態機</h3>
+  <div class="flow" style="flex-direction:column; align-items:flex-start; gap:.4rem">
+    <div class="flow" style="gap:.5rem; flex-wrap:wrap">
+      <div class="flow-box blue">idle</div>
+      <span class="flow-arrow">─接單→</span>
+      <div class="flow-box green">selecting_venue</div>
+      <span class="flow-arrow">─選餐廳→</span>
+      <div class="flow-box purple">pickup</div>
+      <span class="flow-arrow">─到餐廳→</span>
+      <div class="flow-box orange">delivery</div>
+      <span class="flow-arrow">─送達→</span>
+      <div class="flow-box blue">idle</div>
+    </div>
+    <div style="font-size:.85rem; color:var(--text-dim); padding:.2rem .4rem">
+      任意 phase → finished（計時到 0 或手動結算）
+    </div>
+  </div>
+
+  <h3 class="sub">前端狀態輪詢</h3>
+  <pre><code><span class="c-cmt">// game.html — 每 1.8 秒輪詢一次伺服器狀態</span>
+<span class="c-kw">async function</span> <span class="c-fn">pollState</span>() {
+  <span class="c-kw">const</span> data = <span class="c-kw">await</span> fetch(<span class="c-str">'/api/state'</span>).then(r => r.json());
+  serverRemaining = data.remaining;  <span class="c-cmt">// 同步計時器</span>
+  switchPanel(data);                 <span class="c-cmt">// 依 phase 顯示對應面板</span>
+  setTimeout(pollState, <span class="c-num">1800</span>);
+}</code></pre>
+</section>
+
+<!-- ── 12. 多執行緒 ── -->
+<section id="threading">
+  <h2 class="sec">實作細節：多執行緒設計</h2>
+
+  <h3 class="sub">Loading Phase：背景初始化</h3>
+  <pre><code><span class="c-cmt"># init_game()：POST /init 立刻回應（跳 loading 頁），初始化在 Thread 裡跑</span>
+<span class="c-kw">def</span> <span class="c-fn">_setup</span>():
+    data = prepare_game(location)   <span class="c-cmt"># geocode + 生成訂單（慢，~2s）</span>
+    _games[game_id] = data
+
+threading.Thread(target=_setup, daemon=<span class="c-kw">True</span>).start()
+<span class="c-kw">return</span> redirect(url_for(<span class="c-str">"loading"</span>))</code></pre>
+
+  <h3 class="sub">背景預取（Prefetch）</h3>
+  <p>每次送達後，立刻啟動 Thread 預先搜尋下一個訂單的餐廳，讓玩家接單時無需等待：</p>
+  <pre><code><span class="c-cmt"># api_deliver() 完成後啟動預取</span>
+threading.Thread(
+    target=_prefetch_venues,
+    args=(gid, new_order[<span class="c-str">"id"</span>], tuple(g[<span class="c-str">"player_pos"</span>])),
+    daemon=<span class="c-kw">True</span>,
+).start()
+
+<span class="c-kw">def</span> <span class="c-fn">_prefetch_venues</span>(game_id, order_id, player_pos):
+    time.sleep(<span class="c-num">0.8</span>)            <span class="c-cmt"># 避免與地圖重建撞在一起</span>
+    venues = geocoder.search_venues(...)
+    <span class="c-kw">with</span> _games_lock:
+        order[<span class="c-str">"venues_prefetched"</span>] = venues   <span class="c-cmt"># 存入 game state</span>
+
+<span class="c-cmt"># api_accept() 優先使用預取結果</span>
+<span class="c-kw">if</span> order.get(<span class="c-str">"venues_prefetched"</span>):
+    venues = order.pop(<span class="c-str">"venues_prefetched"</span>)  <span class="c-cmt"># 秒回應，跳過 API 呼叫</span></code></pre>
+
+  <div class="callout">
+    <code>_games_lock</code> 的使用：讀取不需要鎖（Python dict 讀取是原子的），<strong>寫入必須加鎖</strong>防止 race condition。預取函式在鎖內二次確認 order 沒被其他 thread 先填好，才寫入。
+  </div>
+</section>
+
+<!-- ── 13. 排行榜 ── -->
+<section id="leaderboard">
+  <h2 class="sec">實作細節：排行榜</h2>
+  <pre><code><span class="c-kw">def</span> <span class="c-fn">_dedup_scores</span>(scores):
+    <span class="c-str">"""同名玩家只保留最高分（dict 去重 + 降序排序）"""</span>
+    best = {}
+    <span class="c-kw">for</span> s <span class="c-kw">in</span> scores:
+        n = s[<span class="c-str">"name"</span>]
+        <span class="c-kw">if</span> n <span class="c-kw">not in</span> best <span class="c-kw">or</span> s[<span class="c-str">"money"</span>] > best[n][<span class="c-str">"money"</span>]:
+            best[n] = s
+    <span class="c-kw">return</span> sorted(best.values(), key=<span class="c-kw">lambda</span> x: x[<span class="c-str">"money"</span>], reverse=<span class="c-kw">True</span>)
+
+<span class="c-kw">def</span> <span class="c-fn">save_score</span>(name, money, deliveries, city):
+    scores = load_leaderboard()
+    scores.append({...})
+    scores = _dedup_scores(scores)[:config.LEADERBOARD_MAX]  <span class="c-cmt"># 最多 10 筆</span>
+    _write_leaderboard(scores)
+    rank = next((i+<span class="c-num">1</span> <span class="c-kw">for</span> i, s <span class="c-kw">in</span> enumerate(scores)
+                 <span class="c-kw">if</span> s[<span class="c-str">"name"</span>] == name <span class="c-kw">and</span> s[<span class="c-str">"money"</span>] == money), <span class="c-kw">None</span>)
+    <span class="c-kw">return</span> rank, scores    <span class="c-cmt"># 回傳名次給 result.html 顯示</span></code></pre>
+  <p>刪除與去重都透過 <strong>AJAX（fetch API）</strong>完成，排行榜即時更新不需要重整頁面。</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     助教問答 QA
+     ═══════════════════════════════════════════════════ -->
+<section id="qa-api">
+  <h2 class="sec">助教 QA — API 相關</h2>
+
+  <div class="qa-card">
+    <div class="qa-q">為什麼 Nominatim 的 Rate Limiting 要用全域變數，而不是放在 Geocoder 的 instance 裡？</div>
+    <div class="qa-a">
+      <p>因為每個 Flask request 進來都會 <code>new Geocoder()</code>，背景 prefetch thread 也會建立自己的 Geocoder 實例。如果鎖是 instance 屬性，每個 instance 各有一把鎖，互不等待，實際上完全沒有限速效果。</p>
+      <p>必須用 <strong>module-level 的 <code>_RATE_LOCK</code> 和 <code>_LAST_CALL</code></strong>，讓所有實例、所有 thread 都共享同一把鎖，確保整個 process 每 1.1 秒最多送一次 Nominatim 請求。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">Nominatim 的 User-Agent 是什麼？為什麼一定要加？</div>
+    <div class="qa-a">
+      <p>Nominatim 的使用條款要求每個請求都帶有 <code>User-Agent</code> header，必須包含可聯絡的 email 或應用程式名稱。沒有 User-Agent 會收到 <strong>HTTP 403 Forbidden</strong>。</p>
+      <p>設定在 <code>config.py</code> 的 <code>USER_AGENT</code>，Geocoder 初始化時設為 <code>self.headers = {"User-Agent": config.USER_AGENT}</code>，每次 requests.get 都帶上這個 header。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">OSRM 的座標順序為什麼跟 Folium 相反？你們是怎麼處理的？</div>
+    <div class="qa-a">
+      <p>OSRM 遵循 GeoJSON 標準，座標是 <strong>[經度, 緯度]（lon, lat）</strong>；Folium 跟大多數地圖函式庫一樣用 <strong>[緯度, 經度]（lat, lon）</strong>。</p>
+      <p>處理點：<br>
+      1. URL 構建時手動交換：<code>f"{start[1]},{start[0]};{end[1]},{end[0]}"</code>（取 tuple 的 index 1 和 0）<br>
+      2. 回傳的 geometry 座標同樣需要轉換：<code>[[c[1], c[0]] for c in coordinates]</code>
+      </p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">便利商店搜不到怎麼辦？Fallback 鏈是怎麼設計的？</div>
+    <div class="qa-a">
+      <p>OSM 對便利商店的標記不如餐廳完整（有些只標 amenity 而非 shop name）。設計了一個 fallback 鏈：先搜 <code>7-Eleven</code>，沒有結果再搜 <code>全家</code>、<code>萊爾富</code>，最後 fallback 到 <code>supermarket</code>。</p>
+      <p>程式邏輯是一個 for 迴圈，遇到有結果就 <code>break</code>，否則繼續下一個 query。這樣保證用戶在任何有人居住的地方都能找到至少一個取貨點。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">search_venues 中的 viewbox 和 bounded 參數是什麼意思？</div>
+    <div class="qa-a">
+      <p><code>viewbox</code> 定義一個矩形搜尋框（左上角、右下角的經緯度）；<code>bounded=1</code> 告訴 Nominatim <strong>只回傳框內的結果</strong>（不加這個，Nominatim 可能把框外但匹配度高的結果排在前面）。</p>
+      <p>框的大小由 <code>VENUE_SEARCH_RADIUS = 2000</code> 公尺換算：1度緯度約 111km，所以 <code>delta = 2000 / 111_000 ≈ 0.018 度</code>，以玩家座標為中心做正方形包圍盒。</p>
+    </div>
+  </div>
+</section>
+
+<section id="qa-flask">
+  <h2 class="sec">助教 QA — Flask 相關</h2>
+
+  <div class="qa-card">
+    <div class="qa-q">為什麼要用 threading 而不是直接在 Flask route 裡做 geocode？</div>
+    <div class="qa-a">
+      <p>Nominatim 呼叫需要約 1-2 秒（加上限速等待）。如果直接在 <code>/init</code> route 裡同步執行，瀏覽器會卡在那裡等，體驗很差。</p>
+      <p>用 Thread 的好處：<code>/init</code> 立刻 redirect 到 <code>/loading</code>（幾乎 0 延遲），Loading 頁面輪詢 <code>/api/loading_status</code>（純 dict 讀取，快），Thread 在背景靜靜做完 geocode，完成後把 game state 改成 <code>"ready"</code>，前端偵測到就自動跳到遊戲畫面。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">Flask session 在這裡是怎麼用的？每個玩家怎麼知道自己的遊戲是哪一局？</div>
+    <div class="qa-a">
+      <p>Flask session 是基於 cookie 的。<code>/init</code> 時生成一個 <code>uuid4()</code> 作為 <code>game_id</code>，存進 session（寫入 cookie）。之後每個 API 請求進來，<code>get_game()</code> 從 cookie 讀出 <code>game_id</code>，在 <code>_games</code> dict 查找對應的遊戲狀態。</p>
+      <p>這樣同一台電腦的不同分頁或不同使用者（不同 cookie）都有獨立的 game_id，資料不會混在一起。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">_games_lock 是什麼？為什麼需要它？</div>
+    <div class="qa-a">
+      <p>Flask 設定 <code>threaded=True</code>（預設）時，每個 HTTP request 在不同的 thread 處理。同時，prefetch 和 loading 的背景 Thread 也在寫入 <code>_games</code> dict。</p>
+      <p>如果兩個 thread 同時寫入同一個 dict key，Python 雖然有 GIL（Global Interpreter Lock），但複合操作（讀-修改-寫）仍可能被中斷。<code>threading.Lock()</code> 確保同一時間只有一個 thread 能修改 <code>_games</code>，避免 race condition。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">/api/state 這個 endpoint 的作用是什麼？為什麼要輪詢它？</div>
+    <div class="qa-a">
+      <p><code>/api/state</code> 是前端與後端同步的橋樑，每 1.8 秒被呼叫一次，回傳：剩餘時間、當前 phase、金錢、可接訂單列表、當前訂單詳情、餐廳選項列表等。</p>
+      <p>選擇輪詢而非 WebSocket 的原因：<strong>實作簡單、Flask 原生支援、遊戲事件頻率低</strong>（不需要 sub-second 更新）。1.8 秒的間隔足夠在計時到 0 時及時跳結算頁。</p>
+    </div>
+  </div>
+</section>
+
+<section id="qa-map">
+  <h2 class="sec">助教 QA — 地圖相關</h2>
+
+  <div class="qa-card">
+    <div class="qa-q">Folium 生成的 HTML 是怎麼顯示在頁面上的？為什麼用 iframe？</div>
+    <div class="qa-a">
+      <p>Folium 的 <code>m.get_root().render()</code> 回傳一個<strong>完整的 HTML 字串</strong>（含 Leaflet.js CDN、CSS、初始化 JavaScript）。這個字串存在 game state 的 <code>map_html</code> key 裡。</p>
+      <p>用 iframe 的原因：<br>
+      1. Folium 生成的 HTML 有自己完整的 <code>&lt;html&gt;&lt;head&gt;&lt;body&gt;</code>，不能直接嵌入另一個頁面的 DOM<br>
+      2. iframe 提供隔離的執行環境，Leaflet.js 的全域變數不會污染父頁面<br>
+      3. 每次地圖需要更新（phase 改變），只需重設 <code>iframe.src</code> 即可
+      </p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">iframe 和父頁面怎麼溝通？為什麼可以點地圖上的餐廳標記讓右側卡片高亮？</div>
+    <div class="qa-a">
+      <p>透過 <strong>Web API：<code>postMessage</code></strong>。地圖 HTML 裡注入的 JS 監聽 Leaflet marker 的 click 事件，點擊時呼叫 <code>window.parent.postMessage({type:'marker_click', id: orderId}, '*')</code>。</p>
+      <p>父頁面（game.html）有 <code>window.addEventListener('message', e => {...})</code>，收到後根據 <code>e.data.id</code> 找到對應的 <code>[data-order-id]</code> 元素並 scroll 高亮。這是唯一安全的跨 iframe 通訊方式。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">地圖怎麼找到 Leaflet map 物件？<code>findMap()</code> 在做什麼？</div>
+    <div class="qa-a">
+      <p>Folium 會在 <code>window</code> 全域物件上建立一個形如 <code>map_a1b2c3d4</code> 的隨機變數名稱，每次生成都不一樣。</p>
+      <p><code>findMap()</code> 掃描 <code>window</code> 的所有 key，用正規表示式 <code>/^map_[a-f0-9]+$/</code> 找到符合的 key，再確認它有 <code>addLayer</code> 方法（是 Leaflet map 物件），回傳它。這樣就算 Folium 改變命名格式也能正確找到。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">路線為什麼要做 _simplify()？OSRM 回傳的點不能直接用嗎？</div>
+    <div class="qa-a">
+      <p>OSRM 回傳的 GeoJSON 路線可能包含幾百個座標點（每個轉彎都有詳細幾何）。如果全部嵌進 HTML，字串會很大，影響地圖載入速度，動畫插值也需要遍歷更多點。</p>
+      <p><code>_simplify(route, max_pts=60)</code> 用均勻採樣（step = (n-1)/(60-1)）從原始路線取 60 個代表點，最後一個點一定保留（確保終點精確）。視覺上幾乎看不出差異，但資料量大幅降低。</p>
+    </div>
+  </div>
+</section>
+
+<section id="qa-game">
+  <h2 class="sec">助教 QA — 遊戲邏輯</h2>
+
+  <div class="qa-card">
+    <div class="qa-q">DEMO_SEED 是什麼？為什麼要固定亂數種子？</div>
+    <div class="qa-a">
+      <p><code>random.seed(42)</code> 讓所有 <code>random.*</code> 呼叫產生固定序列。好處：每次 demo 訂單的位置、層級、品類都完全相同，不會因為亂數不好而遇到「所有訂單都超遠」或「全是普通單」的情況，讓展示更可控。</p>
+      <p>設為 <code>None</code> 就回到正常隨機模式（實際玩家遊玩時應設 None）。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">訂單池（order_pool）的設計是什麼？每次接單後為什麼要生成新訂單？</div>
+    <div class="qa-a">
+      <p>遊戲開始時只生成 3 張初始訂單（<code>MAX_VISIBLE_ORDERS = 3</code>）。接單、略過、送達後，立刻生成一張新訂單補充，讓可接訂單維持在最多 3 張。</p>
+      <p>新訂單的顧客位置是以<strong>玩家當前位置</strong>為中心隨機生成的（<code>fresh_order(tuple(g["player_pos"]))</code>），而不是以起點。這確保遊戲越玩越往外跑，地圖中心也會跟著移動，體現「位置感知」的核心概念。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">準時獎勵是怎麼計算和判斷的？</div>
+    <div class="qa-a">
+      <p>選定餐廳後（<code>api_select_venue</code>）：<br>
+      1. 用 OSRM 算出兩段路線的秒數 t1（取餐）、t2（外送）<br>
+      2. 用 <code>game_seconds()</code> 縮放成遊戲秒數<br>
+      3. <code>time_limit = int((t1 + t2) * tier["time_factor"])</code>（普通 1.6 倍，急單 1.1 倍）<br>
+      4. 記錄 <code>active_selected_at = time.time()</code>
+      </p>
+      <p>送達時（<code>api_deliver</code>）：<code>elapsed = time.time() - active_selected_at</code>，若 <code>elapsed &lt;= time_limit</code> 就發放 bonus（基本獎金的 30%）。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">玩家送達後，自己的位置是怎麼更新的？</div>
+    <div class="qa-a">
+      <p>送達後（<code>api_deliver</code>）：<code>g["player_pos"] = [order["customer_lat"], order["customer_lon"]]</code>。玩家座標直接跳到顧客位置（即送達點），下一張訂單的顧客就以這個位置為中心隨機生成，模擬「送完就在那裡等下一單」的真實外送情境。</p>
+    </div>
+  </div>
+</section>
+
+<section id="qa-advanced">
+  <h2 class="sec">助教 QA — 進階設計</h2>
+
+  <div class="qa-card">
+    <div class="qa-q">機車動畫為什麼要設計雙驅動（rAF + setInterval）？只用 rAF 不行嗎？</div>
+    <div class="qa-a">
+      <p>瀏覽器在<strong>背景分頁</strong>（使用者切到其他分頁）時，<code>requestAnimationFrame</code> 會被節流到約 1fps 甚至完全暫停，導致動畫永遠停在原地，也就無法發出 <code>pickup_done</code> / <code>delivery_done</code> 的 postMessage，遊戲卡死。</p>
+      <p>加入 <code>setInterval(250ms)</code> 作為備份：分頁切走時 rAF 停了，interval 繼續按時間推進座標插值。兩者都是時間驅動，結果完全一致，且 <code>done</code> flag 確保只有一個先到的 callback 觸發 <code>finish()</code>。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">背景 prefetch 在做什麼？它如何改善使用者體驗？</div>
+    <div class="qa-a">
+      <p>送達後，新訂單被加入池中，此時立刻啟動 <code>_prefetch_venues</code> thread，偷偷 call Nominatim 搜尋那張訂單的餐廳。</p>
+      <p>玩家如果接了這張單，<code>api_accept</code> 先檢查 <code>order["venues_prefetched"]</code>，有的話直接用，省去一次 Nominatim 請求（約 1-2 秒）。接單幾乎<strong>瞬間</strong>顯示餐廳選單。</p>
+      <p>如果預取還沒完成（玩家接得太快），就 fallback 到正常的 Nominatim 查詢，不影響正確性。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">DEMO 模式（⏸️）是如何在不損失時間的情況下暫停/恢復計時的？</div>
+    <div class="qa-a">
+      <p>遊戲的剩餘時間是用 <code>time.time() - start_time</code> 計算的（不是存一個計數器，而是存起始時間戳記）。</p>
+      <p>暫停時：記錄當下的剩餘秒數 <code>paused_remaining = _remaining(g)</code>，設 <code>demo_mode = True</code>，之後所有 <code>_remaining()</code> 呼叫直接回傳 <code>paused_remaining</code>（凍結）。</p>
+      <p>恢復時：把 <code>start_time</code> 重設為 <code>now - (GAME_DURATION - paused_remaining)</code>，讓時間公式繼續從剛才剩餘的秒數倒數，沒有損失任何時間。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">為什麼地圖要放在 iframe 而不是直接用 Leaflet.js 在主頁面？</div>
+    <div class="qa-a">
+      <p>主要是配合 <strong>Folium 的工作方式</strong>：Folium 在 Python 端生成完整 HTML，包含自己的 <code>&lt;script&gt;</code> 標籤引入 Leaflet CDN 和初始化程式碼，無法乾淨地嵌入另一個已有 DOM 結構的頁面。</p>
+      <p>Iframe 的好處：每次更新只需換 <code>src</code>（加 <code>?timestamp</code> 避免 cache），不需要手動銷毀和重建 Leaflet 地圖物件；JS 執行環境隔離，不怕 Leaflet 全域變數衝突。代價是每次 phase 切換都要重新載入地圖（約 0.5 秒），這是可接受的取捨。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">這個 app 能支援多個玩家同時遊玩嗎？</div>
+    <div class="qa-a">
+      <p>設計上支援。每個玩家有獨立的 <code>game_id</code>（UUID）存在 cookie session，對應 <code>_games</code> dict 裡獨立的 entry。<code>_games_lock</code> 確保多個玩家同時寫入不會 race condition。</p>
+      <p>限制：<code>_games</code> 是 in-memory dict，重啟 Flask 就清空；沒有遊戲過期清除機制，長時間跑會佔記憶體。這在 demo/課程作業的規模完全可以接受，Production 環境會改用 Redis 等外部 store。</p>
+    </div>
+  </div>
+
+  <div class="qa-card">
+    <div class="qa-q">haversine 公式跟直接用畢氏定理算距離有什麼不同？為什麼要用 haversine？</div>
+    <div class="qa-a">
+      <p>畢氏定理假設平面座標系，但地球是球體。在台灣（緯度 ~25°），1 度經度對應的實際距離比 1 度緯度短（cos(25°) ≈ 0.906 倍），如果直接用 <code>sqrt((dlat)² + (dlon)²)</code> 會造成東西方向距離失真。</p>
+      <p>Haversine 公式考慮地球曲率，對台灣範圍（百公里內）誤差 &lt; 0.5%，足以精確計算「玩家距顧客幾公尺」來排序餐廳列表和計算獎勵的距離加成。</p>
+    </div>
+  </div>
+
+</section>
+
+</main>
+
+<script>
+// Active sidebar link on scroll
+const sections = document.querySelectorAll('section[id]');
+const links    = document.querySelectorAll('.sidebar a');
+
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const l = document.querySelector(`.sidebar a[href="#${e.target.id}"]`);
+      if (l) l.classList.add('active');
+    }
+  });
+}, { threshold: 0.25 });
+
+sections.forEach(s => io.observe(s));
+
+// QA accordion
+document.querySelectorAll('.qa-q').forEach(q => {
+  q.addEventListener('click', () => {
+    q.parentElement.classList.toggle('open');
+  });
+});
+</script>
+</body>
+</html>
