@@ -23,13 +23,11 @@
 
     <hr class="divider">
 
-    <!-- Idle -->
     <div id="idle-hint" class="idle-hint">從右側選擇訂單接單 →</div>
 
-    <!-- Selecting venue -->
     <div id="selecting-panel" style="display:none">
       <p class="section-title">已接單</p>
-      <div class="active-tier"  id="sel-tier"></div>
+      <div class="active-tier" id="sel-tier"></div>
       <div class="active-venue" id="sel-desire" style="margin-bottom:.4rem"></div>
       <div class="order-meta" style="margin-bottom:.75rem">
         <span id="sel-reward"></span><span id="sel-bonus"></span>
@@ -40,10 +38,9 @@
       </button>
     </div>
 
-    <!-- Pickup / Delivery -->
     <div id="active-panel" style="display:none">
       <p class="section-title">目前任務</p>
-      <div class="active-tier"  id="active-tier"></div>
+      <div class="active-tier" id="active-tier"></div>
       <div class="active-venue" id="active-desire" style="margin-bottom:.3rem"></div>
 
       <div class="delivery-step-row" id="step-row">
@@ -51,13 +48,13 @@
         <span class="step-line"></span>
         <span class="step-dot" id="dot2">2</span>
       </div>
+
       <div class="step-label-row">
         <span id="step-label">🏍️ 前往取餐...</span>
       </div>
 
       <hr class="divider" style="margin:.75rem 0">
 
-      <!-- Bonus countdown -->
       <div class="bonus-row" id="bonus-row">
         <span class="stat-label">🎁 準時獎勵</span>
         <span class="bonus-time" id="bonus-time"></span>
@@ -90,6 +87,7 @@
       <div id="order-list"></div>
       <p class="idle-hint" id="no-orders" style="display:none">暫時沒有新訂單</p>
     </div>
+
     <div id="venues-section" style="display:none">
       <p class="section-title" style="margin-bottom:.75rem">🏪 選擇取餐地點</p>
       <div id="venue-list"></div>
@@ -118,20 +116,25 @@ function showToast(msg, type = '') {
 
 // ── Global game timer ───────────────────────────────────────────────
 const timerEl = document.getElementById('timer');
+
 function tickTimer() {
   if (ended) return;
-  if (demoMode) {                       // DEMO mode: clock frozen
+
+  if (demoMode) {
     timerEl.textContent = '∞';
     timerEl.classList.remove('timer-urgent');
     setTimeout(tickTimer, 1000);
     return;
   }
+
   serverRemaining = Math.max(0, serverRemaining - 1);
   timerEl.textContent = serverRemaining;
+
   if (serverRemaining <= 10) timerEl.classList.add('timer-urgent');
   if (serverRemaining <= 0) endGame();
   else setTimeout(tickTimer, 1000);
 }
+
 setTimeout(tickTimer, 1000);
 
 async function endGame() {
@@ -150,16 +153,16 @@ function goHome() {
   }
 }
 
-// ── Settle now: end the round immediately and record the score ───────
 function settleGame() {
   if (confirm('立即結算本局並查看結果？目前分數會計入排行榜。')) endGame();
 }
 
-// ── DEMO mode: pause / resume the round clock ────────────────────────
+// ── DEMO mode ───────────────────────────────────────────────────────
 function syncDemo(on) {
   demoMode = on;
   const btn = document.getElementById('demo-btn');
   if (!btn) return;
+
   if (on) {
     btn.classList.add('demo-on');
     btn.textContent = '▶️ 繼續計時';
@@ -172,9 +175,10 @@ function syncDemo(on) {
 
 async function toggleDemo() {
   try {
-    const res  = await fetch('/api/toggle_demo', { method: 'POST' });
+    const res = await fetch('/api/toggle_demo', { method: 'POST' });
     const data = await res.json();
     if (!data.ok) return;
+
     serverRemaining = data.remaining;
     syncDemo(data.demo_mode);
     showToast(data.demo_mode ? '🎮 DEMO 模式：計時已暫停' : '⏱️ 計時已恢復');
@@ -184,64 +188,98 @@ async function toggleDemo() {
 // ── State polling ───────────────────────────────────────────────────
 async function pollState() {
   if (ended) return;
+
   try {
-    const res  = await fetch('/api/state');
+    const res = await fetch('/api/state');
     const data = await res.json();
+
     serverRemaining = data.remaining;
-    phase           = data.phase;
-    activeOrder     = data.active_order;
+    phase = data.phase;
+    activeOrder = data.active_order;
+
     if (typeof data.demo_mode === 'boolean') syncDemo(data.demo_mode);
-    document.getElementById('money').textContent      = '$' + data.money;
+
+    document.getElementById('money').textContent = '$' + data.money;
     document.getElementById('deliveries').textContent = data.deliveries + ' 單';
-    if (data.phase === 'finished') { endGame(); return; }
+
+    if (data.phase === 'finished') {
+      endGame();
+      return;
+    }
+
     switchPanel(data);
   } catch {}
+
   setTimeout(pollState, 1800);
 }
+
 pollState();
 
 // ── Card highlight helper ────────────────────────────────────────────
 function highlightCard(el) {
   if (!el) return;
-  // If this exact card is already highlighted, do nothing — prevents
-  // animation restart from duplicate Leaflet click events on the same marker.
+
   if (el.classList.contains('card-highlight')) return;
-  document.querySelectorAll('.card-highlight').forEach(c => c.classList.remove('card-highlight'));
+
+  document.querySelectorAll('.card-highlight')
+    .forEach(c => c.classList.remove('card-highlight'));
+
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   el.classList.add('card-highlight');
+}
+
+// ── Map marker highlight from right panel hover ──────────────────────
+function highlightVenueMarker(idx) {
+  const frame = document.getElementById('map-frame');
+  if (!frame || !frame.contentWindow) return;
+
+  frame.contentWindow.postMessage({
+    type: 'highlight_venue_marker',
+    idx: idx
+  }, '*');
+}
+
+function unhighlightVenueMarker(idx) {
+  const frame = document.getElementById('map-frame');
+  if (!frame || !frame.contentWindow) return;
+
+  frame.contentWindow.postMessage({
+    type: 'unhighlight_venue_marker',
+    idx: idx
+  }, '*');
 }
 
 // ── postMessage: marker clicks + animation completion ────────────────
 window.addEventListener('message', async (e) => {
   if (!e.data || !e.data.type) return;
 
-  // Map marker → highlight matching order card
   if (e.data.type === 'marker_click' && phase === 'idle') {
     highlightCard(document.querySelector(`[data-order-id="${e.data.id}"]`));
     return;
   }
-  // Map venue marker → highlight matching venue card
+
   if (e.data.type === 'venue_click' && phase === 'selecting_venue') {
     highlightCard(document.querySelector(`[data-venue-idx="${e.data.idx}"]`));
     return;
   }
 
-  // Motorcycle arrived at restaurant — update UI only, no map reload
   if (e.data.type === 'pickup_done') {
     const r = await fetch('/api/pickup', { method: 'POST' });
     if ((await r.json()).ok) pollState();
     return;
   }
 
-  // Motorcycle delivered — reload map back to idle
   if (e.data.type === 'delivery_done') {
-    const r    = await fetch('/api/deliver', { method: 'POST' });
+    const r = await fetch('/api/deliver', { method: 'POST' });
     const data = await r.json();
+
     if (data.ok) {
       clearBonusTimer();
+
       const msg = data.got_bonus
         ? `✅ 送達！+$${data.earned}（含準時 +$${data.bonus_amount}）`
         : `📦 送達！+$${data.earned}`;
+
       showToast(msg, data.got_bonus ? 'bonus' : '');
       reloadMap();
       pollState();
@@ -254,14 +292,16 @@ function switchPanel(data) {
   const show = id => document.getElementById(id).style.display = 'block';
   const hide = id => document.getElementById(id).style.display = 'none';
 
-  ['idle-hint','selecting-panel','active-panel'].forEach(hide);
-  ['orders-section','venues-section'].forEach(hide);
+  ['idle-hint', 'selecting-panel', 'active-panel'].forEach(hide);
+  ['orders-section', 'venues-section'].forEach(hide);
 
   if (data.phase === 'idle') {
-    show('idle-hint'); show('orders-section');
+    show('idle-hint');
+    show('orders-section');
     renderOrders(data.available_orders || []);
   } else if (data.phase === 'selecting_venue') {
-    show('selecting-panel'); show('venues-section');
+    show('selecting-panel');
+    show('venues-section');
     renderSelectingPanel(data.active_order);
     renderVenues(data.venue_options || [], data.active_order);
   } else if (data.phase === 'pickup' || data.phase === 'delivery') {
@@ -271,108 +311,182 @@ function switchPanel(data) {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
-const TIER_COLORS = { VIP:'#E17055', '急單':'#FDCB6E', '普通':'#00B894' };
-const VTYPE_EMOJI = { restaurant:'🍔', bubble_tea:'🧋', convenience:'🏪' };
-const tierEmoji   = t => t==='VIP'?'🔴':t==='急單'?'🟡':'🟢';
+const TIER_COLORS = {
+  VIP: '#E17055',
+  '急單': '#FDCB6E',
+  '普通': '#00B894'
+};
+
+const VTYPE_EMOJI = {
+  restaurant: '🍔',
+  bubble_tea: '🧋',
+  convenience: '🏪'
+};
+
+const tierEmoji = t => t === 'VIP' ? '🔴' : t === '急單' ? '🟡' : '🟢';
 
 // ── Order cards ─────────────────────────────────────────────────────
 function renderOrders(orders) {
   const list = document.getElementById('order-list');
   const none = document.getElementById('no-orders');
-  if (!orders.length) { list.innerHTML=''; none.style.display='block'; return; }
+
+  if (!orders.length) {
+    list.innerHTML = '';
+    none.style.display = 'block';
+    return;
+  }
+
   none.style.display = 'none';
+
   list.innerHTML = orders.map(o => `
-    <div class="order-card" data-order-id="${o.id}"
-         style="border-left-color:${TIER_COLORS[o.tier]||'#888'}">
+    <div class="order-card"
+         data-order-id="${o.id}"
+         style="border-left-color:${TIER_COLORS[o.tier] || '#888'}">
       <div class="order-header">
         <span class="order-tier">${tierEmoji(o.tier)} ${o.tier}</span>
         <span class="order-reward">$${o.reward}</span>
       </div>
-      <div class="order-venue">${VTYPE_EMOJI[o.venue_type]||'📦'} ${o.customer_desire||o.venue_type}</div>
-      <div class="order-meta"><span>🎁 準時 +$${o.bonus}</span></div>
+      <div class="order-venue">
+        ${VTYPE_EMOJI[o.venue_type] || '📦'} ${o.customer_desire || o.venue_type}
+      </div>
+      <div class="order-meta">
+        <span>🎁 準時 +$${o.bonus}</span>
+      </div>
       <div class="order-actions">
         <button class="btn-accept" onclick="acceptOrder('${o.id}', this)">接單</button>
-        <button class="btn-skip"   onclick="skipOrder('${o.id}')">略過</button>
+        <button class="btn-skip" onclick="skipOrder('${o.id}')">略過</button>
       </div>
-    </div>`).join('');
+    </div>
+  `).join('');
 }
 
 async function acceptOrder(orderId, btn) {
-  if (btn) { btn.disabled=true; btn.textContent='搜尋中...'; }
-  const res  = await fetch('/api/accept', {
-    method:'POST', headers:{'Content-Type':'application/json'},
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '搜尋中...';
+  }
+
+  const res = await fetch('/api/accept', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({order_id: orderId}),
   });
+
   const data = await res.json();
-  if (data.ok) { reloadMap(); pollState(); }
-  else {
+
+  if (data.ok) {
+    reloadMap();
+    pollState();
+  } else {
     showToast(data.msg || '接單失敗', 'error');
-    if (btn) { btn.disabled=false; btn.textContent='接單'; }
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '接單';
+    }
   }
 }
 
 async function skipOrder(orderId) {
   await fetch('/api/skip', {
-    method:'POST', headers:{'Content-Type':'application/json'},
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({order_id: orderId}),
   });
-  reloadMap(); pollState();
+
+  reloadMap();
+  pollState();
 }
 
 // ── Selecting venue ─────────────────────────────────────────────────
 function renderSelectingPanel(order) {
   if (!order) return;
-  document.getElementById('sel-tier').textContent   = `${tierEmoji(order.tier)} ${order.tier}`;
-  document.getElementById('sel-desire').textContent = `${VTYPE_EMOJI[order.venue_type]||'📦'} ${order.customer_desire||''}`;
-  document.getElementById('sel-reward').textContent = `💰 $${order.reward}`;
-  document.getElementById('sel-bonus').textContent  = `  🎁 +$${order.bonus}`;
+
+  document.getElementById('sel-tier').textContent =
+    `${tierEmoji(order.tier)} ${order.tier}`;
+
+  document.getElementById('sel-desire').textContent =
+    `${VTYPE_EMOJI[order.venue_type] || '📦'} ${order.customer_desire || ''}`;
+
+  document.getElementById('sel-reward').textContent =
+    `💰 $${order.reward}`;
+
+  document.getElementById('sel-bonus').textContent =
+    `  🎁 +$${order.bonus}`;
 }
 
 function renderVenues(venues, order) {
-  const list  = document.getElementById('venue-list');
-  const emoji = order ? (VTYPE_EMOJI[order.venue_type]||'📦') : '📦';
-  if (!venues.length) { list.innerHTML='<p class="idle-hint">附近沒有找到餐廳</p>'; return; }
+  const list = document.getElementById('venue-list');
+  const emoji = order ? (VTYPE_EMOJI[order.venue_type] || '📦') : '📦';
+
+  if (!venues.length) {
+    list.innerHTML = '<p class="idle-hint">附近沒有找到餐廳</p>';
+    return;
+  }
+
   list.innerHTML = venues.map((v, i) => `
-    <div class="venue-card" data-venue-idx="${v.idx}">
+    <div class="venue-card"
+         data-venue-idx="${v.idx}"
+         onmouseenter="highlightVenueMarker(${v.idx})"
+         onmouseleave="unhighlightVenueMarker(${v.idx})">
       <div class="venue-rank">#${i + 1}</div>
       <div class="venue-info">
         <span class="venue-name">${emoji} ${v.name}</span>
         <span class="venue-dist">~${v.dist_m}m</span>
       </div>
-      <button class="btn-accept venue-btn" onclick="selectVenue(${v.idx}, this)">選這家</button>
-    </div>`).join('');
+      <button class="btn-accept venue-btn" onclick="selectVenue(${v.idx}, this)">
+        選這家
+      </button>
+    </div>
+  `).join('');
 }
 
 async function selectVenue(idx, btn) {
-  if (btn) { btn.disabled=true; btn.textContent='計算中...'; }
-  const res  = await fetch('/api/select_venue', {
-    method:'POST', headers:{'Content-Type':'application/json'},
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '計算中...';
+  }
+
+  const res = await fetch('/api/select_venue', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({venue_idx: idx}),
   });
+
   const data = await res.json();
+
   if (data.ok) {
     startBonusTimer(data.time_limit, activeOrder ? activeOrder.bonus : 0);
-    reloadMap(); pollState();
+    reloadMap();
+    pollState();
   } else {
     showToast(data.msg || '選擇失敗', 'error');
-    if (btn) { btn.disabled=false; btn.textContent='選這家'; }
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '選這家';
+    }
   }
 }
 
 async function cancelVenue() {
-  await fetch('/api/cancel_venue', { method:'POST' });
-  reloadMap(); pollState();
+  await fetch('/api/cancel_venue', { method: 'POST' });
+  reloadMap();
+  pollState();
 }
 
-// ── Active delivery panel (no buttons) ─────────────────────────────
+// ── Active delivery panel ───────────────────────────────────────────
 function renderActivePanel(order, currentPhase) {
   if (!order) return;
-  document.getElementById('active-tier').textContent  = `${tierEmoji(order.tier)} ${order.tier}`;
-  document.getElementById('active-desire').textContent= `${VTYPE_EMOJI[order.venue_type]||'📦'} ${order.customer_desire||''}`;
 
-  const dot1  = document.getElementById('dot1');
-  const dot2  = document.getElementById('dot2');
+  document.getElementById('active-tier').textContent =
+    `${tierEmoji(order.tier)} ${order.tier}`;
+
+  document.getElementById('active-desire').textContent =
+    `${VTYPE_EMOJI[order.venue_type] || '📦'} ${order.customer_desire || ''}`;
+
+  const dot1 = document.getElementById('dot1');
+  const dot2 = document.getElementById('dot2');
   const label = document.getElementById('step-label');
+
   if (currentPhase === 'pickup') {
     dot1.className = 'step-dot active';
     dot2.className = 'step-dot';
@@ -388,28 +502,35 @@ function renderActivePanel(order, currentPhase) {
 function startBonusTimer(limit, bonusAmt) {
   bonusLeft = limit;
   clearBonusTimer();
+
   document.getElementById('bonus-amount').textContent = `+$${bonusAmt}`;
   updateBonusDisplay();
+
   bonusIv = setInterval(() => {
     bonusLeft = Math.max(0, bonusLeft - 1);
     updateBonusDisplay();
+
     if (bonusLeft <= 0) clearBonusTimer();
   }, 1000);
 }
 
 function updateBonusDisplay() {
   const el = document.getElementById('bonus-time');
+
   if (el) {
-    el.textContent  = bonusLeft + 's';
-    el.style.color  = bonusLeft <= 5 ? 'var(--accent2)' : 'var(--accent)';
+    el.textContent = bonusLeft + 's';
+    el.style.color = bonusLeft <= 5 ? 'var(--accent2)' : 'var(--accent)';
   }
 }
 
 function clearBonusTimer() {
-  if (bonusIv) { clearInterval(bonusIv); bonusIv = null; }
+  if (bonusIv) {
+    clearInterval(bonusIv);
+    bonusIv = null;
+  }
 }
 
-// ── Map reload (Method A) ───────────────────────────────────────────
+// ── Map reload ──────────────────────────────────────────────────────
 function reloadMap() {
   document.getElementById('map-frame').src = '/map_view?' + Date.now();
 }
